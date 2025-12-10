@@ -1,0 +1,8 @@
+{
+    "defaults": {
+        "project_id": "YOUR_VERTEX_AI_PROJECT_ID",
+        "location": "us-central1",
+        "model": "imagen-3.0-generate-001"
+    },
+    "assets": []
+}

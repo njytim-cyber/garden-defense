@@ -1,0 +1,206 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== GAME STYLES (extracted from monolith) ===== */
+
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: #3b6c28;
+  touch-action: none;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+canvas {
+  display: block;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+.game-ui {
+  pointer-events: none;
+}
+
+.interactive {
+  pointer-events: auto;
+}
+
+.glass-panel {
+  background: rgba(30, 41, 59, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.menu-btn {
+  background: linear-gradient(to bottom, #3b82f6, #2563eb);
+  border: 2px solid #60a5fa;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s, filter 0.1s;
+}
+
+.menu-btn:hover {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+
+.menu-btn:active {
+  transform: scale(0.95);
+}
+
+/* === Animations === */
+
+@keyframes pulse-gold {
+  0% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(251, 191, 36, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* Prismatic effect for Emperor */
+.prismatic-text {
+  background: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: rainbow 2s linear infinite;
+}
+
+@keyframes rainbow {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Coin Animation for UI */
+@keyframes coin-pop {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.5);
+    color: #facc15;
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.coin-flash {
+  animation: coin-pop 0.2s ease-out;
+}
+
+/* Event Banner Animation */
+@keyframes slide-in-event {
+  0% {
+    transform: translateY(-100px);
+    opacity: 0;
+  }
+
+  20% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  80% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-100px);
+    opacity: 0;
+  }
+}
+
+.event-banner {
+  animation: slide-in-event 4s ease-in-out forwards;
+}
+
+/* === Map Card Styling === */
+
+.map-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  border-width: 4px;
+  overflow: hidden;
+  aspect-ratio: 1/1;
+  transition: all 0.2s;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.map-card:hover {
+  transform: scale(1.05);
+  border-color: #facc15;
+}
+
+.map-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  transition: transform 0.2s;
+}
+
+.map-card:hover .map-icon {
+  transform: scale(1.1);
+}
+
+.map-title {
+  font-weight: bold;
+  color: white;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+}
+
+.map-desc {
+  font-size: 0.65rem;
+  margin-top: 0.25rem;
+  color: #cbd5e1;
+  z-index: 10;
+}

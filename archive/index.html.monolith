@@ -1,0 +1,2260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garden Tower Defense - Extended</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #3b6c28; 
+            touch-action: none;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        canvas { display: block; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        .game-ui { pointer-events: none; }
+        .interactive { pointer-events: auto; }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .menu-btn {
+            background: linear-gradient(to bottom, #3b82f6, #2563eb);
+            border: 2px solid #60a5fa;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: transform 0.1s, filter 0.1s;
+        }
+        .menu-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
+        .menu-btn:active { transform: scale(0.95); }
+        
+        /* Animations */
+        @keyframes pulse-gold {
+            0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(251, 191, 36, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+        }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        /* Prismatic effect for Emperor */
+        .prismatic-text {
+            background: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent; 
+            animation: rainbow 2s linear infinite;
+        }
+        @keyframes rainbow { 
+            0%{background-position:0% 50%}
+            100%{background-position:100% 50%}
+        }
+        
+        /* Coin Animation for UI */
+        @keyframes coin-pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); color: #facc15; }
+            100% { transform: scale(1); }
+        }
+        .coin-flash { animation: coin-pop 0.2s ease-out; }
+
+        /* Event Banner Animation */
+        @keyframes slide-in-event {
+            0% { transform: translateY(-100px); opacity: 0; }
+            20% { transform: translateY(0); opacity: 1; }
+            80% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-100px); opacity: 0; }
+        }
+        .event-banner { animation: slide-in-event 4s ease-in-out forwards; }
+    </style>
+</head>
+<body>
+
+    <div class="relative w-full h-screen flex flex-col">
+        
+        <!-- UNIFIED START SCREEN (SPLASH PAGE) -->
+        <div id="startScreen" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-b from-slate-900/90 to-green-900/90 backdrop-blur-md transition-opacity duration-500">
+            <div class="text-center mb-8 animate-float">
+                <h1 class="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600 mb-2 drop-shadow-lg tracking-tight" style="filter: drop-shadow(0 0 10px rgba(34,197,94,0.5));">GARDEN DEFENSE</h1>
+                <p class="text-2xl text-green-200 font-light tracking-[0.3em] opacity-90 border-t border-green-500/30 pt-2 mt-2 inline-block">PROTECT THE SACRED SHRINE</p>
+            </div>
+            
+            <div class="flex flex-col gap-4 items-center w-full max-w-md pointer-events-auto">
+                <button onclick="openMapSelection()" class="menu-btn w-full py-6 rounded-2xl flex items-center justify-center gap-4 bg-gradient-to-r from-green-600 to-emerald-600 border-green-400 hover:from-green-500 hover:to-emerald-500 shadow-lg shadow-green-900/50 group">
+                    <span class="text-4xl group-hover:scale-110 transition-transform">⚔️</span>
+                    <span class="text-3xl font-bold text-white tracking-wide">PLAY GAME</span>
+                </button>
+                
+                <div class="flex gap-4 w-full">
+                    <button onclick="openShop()" class="flex-1 py-4 rounded-xl flex items-center justify-center gap-2 bg-slate-800 border border-slate-600 hover:bg-slate-700 hover:border-yellow-500/50 transition-all group">
+                        <span class="text-2xl group-hover:rotate-12 transition-transform">🛒</span>
+                        <span class="text-lg font-bold text-slate-200 group-hover:text-yellow-400">SHOP</span>
+                    </button>
+                    <button onclick="openSkinShop()" class="flex-1 py-4 rounded-xl flex items-center justify-center gap-2 bg-slate-800 border border-slate-600 hover:bg-slate-700 hover:border-pink-500/50 transition-all group">
+                        <span class="text-2xl group-hover:rotate-12 transition-transform">👕</span>
+                        <span class="text-lg font-bold text-slate-200 group-hover:text-pink-400">SKINS</span>
+                    </button>
+                     <button onclick="openCompendium()" class="flex-1 py-4 rounded-xl flex items-center justify-center gap-2 bg-slate-800 border border-slate-600 hover:bg-slate-700 hover:border-cyan-500/50 transition-all group">
+                        <span class="text-2xl group-hover:-translate-y-1 transition-transform">📖</span>
+                        <span class="text-lg font-bold text-slate-200 group-hover:text-cyan-400">GUIDE</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="absolute bottom-8 text-slate-500 text-sm font-mono">v2.7 - Mega Map Pack</div>
+        </div>
+
+        <!-- COMPENDIUM (WIKI) MENU -->
+        <div id="compendiumMenu" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-md">
+            <div class="w-full max-w-6xl p-8 h-[90vh] flex flex-col">
+                <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4 shrink-0">
+                    <div class="flex items-center gap-6">
+                        <h2 class="text-4xl font-bold text-white flex items-center gap-3"><span class="text-4xl">📖</span> COMPENDIUM</h2>
+                        <div class="flex bg-slate-800 rounded-lg p-1">
+                            <button onclick="renderCompendium('enemies')" id="tabEnemies" class="px-6 py-2 rounded-md font-bold text-sm transition-all bg-cyan-600 text-white shadow-lg">ENEMIES</button>
+                            <button onclick="renderCompendium('towers')" id="tabTowers" class="px-6 py-2 rounded-md font-bold text-sm text-slate-400 hover:text-white transition-all">TOWERS</button>
+                        </div>
+                    </div>
+                    <button onclick="backToStart()" class="text-slate-400 hover:text-white text-xl pointer-events-auto font-bold px-4 py-2 rounded hover:bg-white/10 transition-colors">✕ CLOSE</button>
+                </div>
+                
+                <div id="compendiumContent" class="overflow-y-auto flex-grow pr-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pointer-events-auto">
+                    <!-- Content injected via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- MAP SELECTION -->
+        <div id="mapSelection" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-md">
+            <div class="w-full max-w-7xl p-8 h-full flex flex-col">
+                <div class="flex justify-between items-center mb-4 shrink-0">
+                    <h2 class="text-4xl font-bold text-white flex items-center gap-3"><span class="text-4xl">🗺️</span> SELECT MAP</h2>
+                    <button onclick="backToStart()" class="text-slate-400 hover:text-white text-xl pointer-events-auto font-bold px-4 py-2 rounded hover:bg-white/10 transition-colors">✕ BACK</button>
+                </div>
+                <div class="overflow-y-auto flex-grow pr-2">
+                    <div class="grid grid-cols-5 gap-6 pointer-events-auto pb-8">
+                        <!-- Standard Maps -->
+                        <button onclick="selectMap('garden')" class="map-card bg-green-800 border-green-600">
+                            <div class="map-icon">🌿</div><div class="map-title">GARDEN</div><div class="map-desc">Easy • Classic</div>
+                        </button>
+                        <button onclick="selectMap('rainforest')" class="map-card bg-teal-900 border-teal-600">
+                            <div class="map-icon">🌴</div><div class="map-title">RAINFOREST</div><div class="map-desc">Medium • Hybrid</div>
+                        </button>
+                        <button onclick="selectMap('red_bridge')" class="map-card bg-red-950 border-red-700">
+                            <div class="map-icon">🌉</div><div class="map-title">RED BRIDGE</div><div class="map-desc text-red-200">Narrow Path</div>
+                        </button>
+                        <button onclick="selectMap('city')" class="map-card bg-slate-700 border-slate-500">
+                            <div class="map-icon">🏙️</div><div class="map-title">CITY</div><div class="map-desc">Urban Grid</div>
+                        </button>
+                        <button onclick="selectMap('crossing_roads')" class="map-card bg-gray-800 border-yellow-600">
+                            <div class="map-icon">🚦</div><div class="map-title">CROSSING</div><div class="map-desc">Intersection</div>
+                        </button>
+                        <button onclick="selectMap('cursed')" class="map-card bg-violet-950 border-violet-500">
+                            <div class="map-icon">⛩️</div><div class="map-title">CURSED PATH</div><div class="map-desc text-violet-300">Portals • Boss Warp</div>
+                        </button>
+                        <button onclick="selectMap('graveyard')" class="map-card bg-slate-950 border-red-900">
+                            <div class="map-icon text-red-500">🌑</div><div class="map-title text-red-500">GRAVEYARD</div><div class="map-desc text-red-400">Blood Moon • Fast Foes</div>
+                        </button>
+                        <button onclick="selectMap('volcano')" class="map-card bg-orange-950 border-orange-600">
+                            <div class="map-icon">🌋</div><div class="map-title text-orange-400">VOLCANO</div><div class="map-desc text-orange-200">Lava Flows</div>
+                        </button>
+                        <button onclick="selectMap('the_loop')" class="map-card bg-indigo-800 border-indigo-500">
+                            <div class="map-icon">➰</div><div class="map-title">THE LOOP</div><div class="map-desc">Spiraling Path</div>
+                        </button>
+                        <button onclick="selectMap('castle_doors')" class="map-card bg-stone-800 border-stone-500">
+                            <div class="map-icon">🚪</div><div class="map-title">CASTLE DOORS</div><div class="map-desc">Twin Gates</div>
+                        </button>
+                        
+                        <!-- Extra Maps -->
+                        <button onclick="selectMap('watersprouts')" class="map-card bg-blue-900 border-blue-600">
+                            <div class="map-icon">🌊</div><div class="map-title">WATER SPROUTS</div><div class="map-desc text-blue-200">Ships Only</div>
+                        </button>
+                         <button onclick="selectMap('rainbow_heights')" class="map-card bg-pink-900 border-pink-400 overflow-hidden">
+                            <div class="map-icon">🌈</div><div class="map-title text-pink-200">RAINBOW</div><div class="map-desc text-pink-100">Colorful Path</div>
+                        </button>
+                        <button onclick="selectMap('stump')" class="map-card bg-amber-900 border-amber-700">
+                            <div class="map-icon">🪵</div><div class="map-title">THE STUMP</div><div class="map-desc text-amber-200">2x Range Spot</div>
+                        </button>
+                        <button onclick="selectMap('enchanted')" class="map-card bg-purple-900 border-purple-600">
+                            <div class="map-icon">🔮</div><div class="map-title">ENCHANTED</div><div class="map-desc">Multi-Path</div>
+                        </button>
+                        <button onclick="selectMap('treeparadise')" class="map-card bg-green-900 border-green-700">
+                            <div class="map-icon">🌳</div><div class="map-title">TREE PARADISE</div><div class="map-desc">Dense Forest</div>
+                        </button>
+                         <button onclick="selectMap('light_paradise')" class="map-card bg-sky-200 border-sky-400">
+                            <div class="map-icon">✨</div><div class="map-title text-sky-800">PARADISE</div><div class="map-desc text-sky-700">Holy Land</div>
+                        </button>
+                        <button onclick="selectMap('four_circles')" class="map-card bg-lime-700 border-lime-500">
+                            <div class="map-icon">🍀</div><div class="map-title">4 CIRCLES</div><div class="map-desc">Looping Paths</div>
+                        </button>
+                        <button onclick="selectMap('staggered')" class="map-card bg-slate-600 border-slate-400">
+                            <div class="map-icon">⚡</div><div class="map-title">STAGGERED</div><div class="map-desc">Zig Zag</div>
+                        </button>
+                        <button onclick="selectMap('dark_castle')" class="map-card bg-stone-900 border-stone-600">
+                            <div class="map-icon">🏰</div><div class="map-title">DARK CASTLE</div><div class="map-desc text-orange-300">Hard • Armored</div>
+                        </button>
+                        <button onclick="selectMap('spiral')" class="map-card bg-indigo-900 border-indigo-500">
+                            <div class="map-icon">🌀</div><div class="map-title">THE SPIRAL</div><div class="map-desc">Long Path</div>
+                        </button>
+                         <button onclick="selectMap('covered_garden')" class="map-card bg-emerald-900 border-emerald-400 overflow-hidden relative">
+                             <div class="absolute inset-0 bg-white/10 rotate-45 transform scale-150"></div>
+                            <div class="map-icon">🛖</div><div class="map-title">COVERED</div><div class="map-desc text-emerald-200">Shifting Glass</div>
+                        </button>
+                        <button onclick="selectMap('glass_layer')" class="map-card bg-cyan-900 border-cyan-400">
+                            <div class="map-icon">🧊</div><div class="map-title">GLASS LAYER</div><div class="map-desc text-red-300">Fragile Floor</div>
+                        </button>
+
+                        <!-- NEW MAPS (20) -->
+                        <button onclick="selectMap('desert_oasis')" class="map-card bg-yellow-700 border-yellow-500">
+                            <div class="map-icon">🏜️</div><div class="map-title">DESERT OASIS</div><div class="map-desc text-yellow-200">Hot Sand</div>
+                        </button>
+                        <button onclick="selectMap('frozen_tundra')" class="map-card bg-blue-200 border-blue-400">
+                            <div class="map-icon">❄️</div><div class="map-title text-blue-800">TUNDRA</div><div class="map-desc text-blue-700">Icy Wasteland</div>
+                        </button>
+                        <button onclick="selectMap('lava_lake')" class="map-card bg-red-950 border-red-600">
+                            <div class="map-icon">🔥</div><div class="map-title text-red-500">LAVA LAKE</div><div class="map-desc text-red-400">Magma Island</div>
+                        </button>
+                        <button onclick="selectMap('space_station')" class="map-card bg-slate-950 border-slate-600">
+                            <div class="map-icon">🛰️</div><div class="map-title">SPACE STATION</div><div class="map-desc text-slate-300">Zero G</div>
+                        </button>
+                        <button onclick="selectMap('cloud_kingdom')" class="map-card bg-sky-300 border-sky-100">
+                            <div class="map-icon">☁️</div><div class="map-title text-white">CLOUD KINGDOM</div><div class="map-desc text-sky-100">Sky High</div>
+                        </button>
+                        <button onclick="selectMap('circuit_board')" class="map-card bg-emerald-950 border-emerald-500">
+                            <div class="map-icon">📟</div><div class="map-title text-emerald-400">CIRCUIT</div><div class="map-desc text-emerald-600">Tech Path</div>
+                        </button>
+                        <button onclick="selectMap('candy_land')" class="map-card bg-pink-200 border-pink-400">
+                            <div class="map-icon">🍭</div><div class="map-title text-pink-600">CANDY LAND</div><div class="map-desc text-pink-500">Sweet Route</div>
+                        </button>
+                        <button onclick="selectMap('haunted_swamp')" class="map-card bg-stone-800 border-lime-900">
+                            <div class="map-icon">👻</div><div class="map-title text-lime-700">SWAMP</div><div class="map-desc text-stone-400">Murky Water</div>
+                        </button>
+                        <button onclick="selectMap('the_maze')" class="map-card bg-slate-800 border-slate-400">
+                            <div class="map-icon">🧩</div><div class="map-title">THE MAZE</div><div class="map-desc">Long Winding</div>
+                        </button>
+                        <button onclick="selectMap('double_cross')" class="map-card bg-gray-700 border-gray-500">
+                            <div class="map-icon">❌</div><div class="map-title">DOUBLE CROSS</div><div class="map-desc">Intersecting</div>
+                        </button>
+                        <button onclick="selectMap('island_hopping')" class="map-card bg-cyan-800 border-cyan-500">
+                            <div class="map-icon">🏝️</div><div class="map-title">ISLANDS</div><div class="map-desc text-cyan-200">Archipelago</div>
+                        </button>
+                        <button onclick="selectMap('the_canyon')" class="map-card bg-amber-900 border-amber-600">
+                            <div class="map-icon">⛰️</div><div class="map-title text-amber-200">CANYON</div><div class="map-desc text-amber-400">Narrow Pass</div>
+                        </button>
+                        <button onclick="selectMap('zen_garden')" class="map-card bg-stone-200 border-stone-400">
+                            <div class="map-icon">☯️</div><div class="map-title text-stone-600">ZEN GARDEN</div><div class="map-desc text-stone-500">Peaceful</div>
+                        </button>
+                        <button onclick="selectMap('industrial')" class="map-card bg-zinc-800 border-zinc-500">
+                            <div class="map-icon">🏭</div><div class="map-title text-zinc-300">INDUSTRIAL</div><div class="map-desc text-zinc-500">Factory</div>
+                        </button>
+                        <button onclick="selectMap('crystal_cavern')" class="map-card bg-indigo-950 border-indigo-400">
+                            <div class="map-icon">💎</div><div class="map-title text-indigo-300">CRYSTAL CAVE</div><div class="map-desc text-indigo-500">Gemstone</div>
+                        </button>
+                        <button onclick="selectMap('beehive')" class="map-card bg-yellow-200 border-yellow-500">
+                            <div class="map-icon">🐝</div><div class="map-title text-yellow-800">BEEHIVE</div><div class="map-desc text-yellow-600">Hexagons</div>
+                        </button>
+                        <button onclick="selectMap('the_void')" class="map-card bg-black border-purple-900">
+                            <div class="map-icon">⚫</div><div class="map-title text-purple-500">THE VOID</div><div class="map-desc text-gray-600">Empty Space</div>
+                        </button>
+                        <button onclick="selectMap('snake_pit')" class="map-card bg-lime-950 border-lime-600">
+                            <div class="map-icon">🐍</div><div class="map-title text-lime-400">SNAKE PIT</div><div class="map-desc text-lime-700">Slithering</div>
+                        </button>
+                        <button onclick="selectMap('pyramid')" class="map-card bg-yellow-600 border-yellow-400">
+                            <div class="map-icon">🔺</div><div class="map-title text-yellow-100">PYRAMID</div><div class="map-desc text-yellow-300">Ancient Tomb</div>
+                        </button>
+                        <button onclick="selectMap('checkered')" class="map-card bg-neutral-900 border-white">
+                            <div class="map-icon">🏁</div><div class="map-title text-white">CHECKERED</div><div class="map-desc text-gray-400">Grid World</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DIFFICULTY SELECTION SCREEN (NEW) -->
+        <div id="difficultySelection" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-md">
+            <div class="text-center mb-10">
+                <h2 class="text-5xl font-black text-white mb-2 drop-shadow-lg">SELECT DIFFICULTY</h2>
+                <p class="text-xl text-slate-400">Choose your challenge level</p>
+            </div>
+            
+            <div class="flex gap-8 pointer-events-auto">
+                <!-- EASY -->
+                <button onclick="selectDifficulty('easy')" class="group flex flex-col items-center gap-4 bg-green-900/40 border-2 border-green-500 hover:bg-green-900/80 p-8 rounded-2xl w-64 transition-all hover:scale-105 hover:shadow-[0_0_20px_rgba(34,197,94,0.3)]">
+                    <div class="text-6xl group-hover:scale-110 transition-transform">🌱</div>
+                    <h3 class="text-3xl font-bold text-green-400">EASY</h3>
+                    <div class="bg-slate-900/60 px-4 py-2 rounded-lg text-green-200 font-mono text-lg">
+                        Start: $150
+                    </div>
+                </button>
+
+                <!-- MEDIUM -->
+                <button onclick="selectDifficulty('medium')" class="group flex flex-col items-center gap-4 bg-blue-900/40 border-2 border-blue-500 hover:bg-blue-900/80 p-8 rounded-2xl w-64 transition-all hover:scale-105 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+                    <div class="text-6xl group-hover:scale-110 transition-transform">⚔️</div>
+                    <h3 class="text-3xl font-bold text-blue-400">MEDIUM</h3>
+                    <div class="bg-slate-900/60 px-4 py-2 rounded-lg text-blue-200 font-mono text-lg">
+                        Start: $100
+                    </div>
+                </button>
+
+                <!-- HARD -->
+                <button onclick="selectDifficulty('hard')" class="group flex flex-col items-center gap-4 bg-red-900/40 border-2 border-red-500 hover:bg-red-900/80 p-8 rounded-2xl w-64 transition-all hover:scale-105 hover:shadow-[0_0_20px_rgba(239,68,68,0.3)]">
+                    <div class="text-6xl group-hover:scale-110 transition-transform">☠️</div>
+                    <h3 class="text-3xl font-bold text-red-400">HARD</h3>
+                    <div class="bg-slate-900/60 px-4 py-2 rounded-lg text-red-200 font-mono text-lg w-full text-center">
+                        Start: $100<br>
+                        <span class="text-red-400 font-bold text-sm">+10% Enemy Speed</span>
+                    </div>
+                </button>
+            </div>
+            
+            <button onclick="backToMap()" class="mt-12 text-slate-400 hover:text-white text-xl font-bold px-6 py-3 rounded hover:bg-white/10 transition-colors pointer-events-auto">✕ BACK TO MAPS</button>
+        </div>
+
+        <!-- SHOP MENU -->
+        <div id="shopMenu" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-md">
+            <div class="w-full max-w-5xl p-8">
+                <div class="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
+                    <h2 class="text-4xl font-bold text-white flex items-center gap-3"><span class="text-4xl">🛒</span> ITEM SHOP</h2>
+                    <div class="flex items-center gap-6">
+                        <div class="text-yellow-400 text-2xl font-mono font-bold bg-slate-800 px-4 py-2 rounded-lg border border-yellow-500/30">Gold: <span id="shopGoldDisplay">1000</span></div>
+                        <button onclick="backToStart()" class="text-slate-400 hover:text-white text-xl pointer-events-auto font-bold px-4 py-2 rounded hover:bg-white/10 transition-colors">✕ CLOSE</button>
+                    </div>
+                </div>
+                <div id="shopContainer" class="grid grid-cols-4 gap-4 pointer-events-auto overflow-y-auto max-h-[70vh] pr-2"></div>
+            </div>
+        </div>
+
+        <!-- SKIN SHOP MENU (Placeholder) -->
+        <div id="skinMenu" class="hidden absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-md">
+            <div class="w-full max-w-3xl p-8 text-center">
+                <h2 class="text-5xl font-bold text-pink-400 mb-4">SKIN SHOP</h2>
+                <p class="text-xl text-slate-300 mb-8">Customize your towers and enemies! (Coming Soon)</p>
+                <div class="grid grid-cols-3 gap-4 mb-8 opacity-50 pointer-events-none">
+                    <div class="bg-slate-800 h-40 rounded-xl border border-slate-600 flex items-center justify-center text-4xl">🤖</div>
+                    <div class="bg-slate-800 h-40 rounded-xl border border-slate-600 flex items-center justify-center text-4xl">🐉</div>
+                    <div class="bg-slate-800 h-40 rounded-xl border border-slate-600 flex items-center justify-center text-4xl">🎃</div>
+                </div>
+                <button onclick="backToStart()" class="bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 px-8 rounded-full pointer-events-auto">Back to Menu</button>
+            </div>
+        </div>
+
+        <!-- IN-GAME HUD -->
+        <div id="gameUI" class="hidden">
+            <!-- Top HUD -->
+            <div id="topHud" class="absolute top-0 left-0 w-full p-4 flex justify-between items-start game-ui z-10 text-white select-none animate-slide-down">
+                <div class="flex flex-col gap-2">
+                    <div class="flex items-center gap-4 glass-panel p-3 rounded-lg shadow-lg">
+                        <div class="text-red-400 font-bold text-xl flex items-center gap-2"><span>♥</span> <span id="livesDisplay">20</span></div>
+                        <div class="w-px h-6 bg-slate-600"></div>
+                        <div class="text-yellow-400 font-bold text-xl flex items-center gap-2"><span>$</span> <span id="moneyDisplay">100</span></div>
+                        <div class="w-px h-6 bg-slate-600"></div>
+                        <div class="text-blue-400 font-bold text-xl flex items-center gap-2"><span>Wave:</span> <span id="waveDisplay">1</span></div>
+                        <div id="mapSpecialText" class="hidden w-px h-6 bg-slate-600"></div>
+                        <div id="mapSpecialDisplay" class="hidden text-purple-300 font-bold text-sm uppercase tracking-wider"></div>
+                    </div>
+                    <div id="mergeHud" class="hidden flex items-center gap-4 bg-purple-900/90 backdrop-blur-sm p-3 rounded-lg border border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)] animate-pulse">
+                        <div class="text-white font-bold text-lg">MERGE MODE</div>
+                        <div class="text-purple-200 text-sm" id="mergeInstructions">Select 2 more towers</div>
+                        <button onclick="cancelMerge()" class="pointer-events-auto bg-red-600 px-2 py-1 rounded text-xs hover:bg-red-500">CANCEL</button>
+                    </div>
+                </div>
+                <div class="interactive flex gap-2">
+                    <button id="waveControlBtn" class="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-lg shadow-[0_0_15px_rgba(34,197,94,0.5)] transition-all transform hover:scale-105 active:scale-95 border border-green-400 min-w-[140px]">Start Wave</button>
+                    <button onclick="showQuitModal()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold p-3 rounded-lg border border-slate-500 transition-all shadow-lg" title="Main Menu">🏠</button>
+                </div>
+            </div>
+
+            <!-- Event Banner -->
+            <div id="eventBanner" class="hidden absolute top-32 left-0 w-full flex justify-center z-40 pointer-events-none">
+                <div class="bg-gradient-to-r from-transparent via-red-900/90 to-transparent px-20 py-4 border-y-2 border-red-500 transform event-banner">
+                    <h2 id="eventTitle" class="text-4xl font-black text-red-100 tracking-widest drop-shadow-[0_0_10px_rgba(220,38,38,0.8)]">BOSS APPROACHING</h2>
+                    <p id="eventSub" class="text-center text-red-300 text-sm font-bold uppercase tracking-wide mt-1">Prepare your defenses</p>
+                </div>
+            </div>
+
+            <!-- Bottom Tower Selection Panel -->
+            <div id="bottomPanel" class="absolute bottom-0 left-0 w-full p-4 flex justify-center game-ui z-10 select-none animate-slide-up">
+                <div class="glass-panel p-2 rounded-xl shadow-2xl flex gap-4 interactive overflow-x-auto max-w-full">
+                    <div id="towerButtonsContainer" class="flex gap-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Canvas --><canvas id="gameCanvas" class="flex-grow w-full h-full"></canvas>
+
+        <!-- UPGRADE PANEL --><div id="upgradePanel" class="hidden absolute bottom-32 left-1/2 transform -translate-x-1/2 glass-panel border border-yellow-500/50 p-4 rounded-xl text-white z-20 flex flex-col gap-3 min-w-[240px] shadow-[0_0_20px_rgba(0,0,0,0.5)] interactive">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                <span id="upgName" class="font-bold text-lg text-cyan-400">Turret Lvl 1</span>
+                <button onclick="closeUpgradePanel()" class="text-slate-400 hover:text-white">✕</button>
+            </div>
+            <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-slate-300">
+                <span>Damage:</span> <span id="upgDmg" class="text-right font-mono text-white">20</span>
+                <span>Range:</span> <span id="upgRange" class="text-right font-mono text-white">120</span>
+                <span>Speed:</span> <span id="upgSpeed" class="text-right font-mono text-white">Fast</span>
+            </div>
+            <div id="upgradeWarning" class="hidden text-red-400 text-xs text-center font-bold">Cannot upgrade under glass!</div>
+            <div id="heroWarning" class="hidden text-yellow-400 text-xs text-center font-bold">Hero cannot be sold or upgraded yet!</div>
+            <div class="flex gap-2 mt-2">
+                <button onclick="buyUpgrade()" id="btnUpgrade" class="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed py-2 rounded text-sm font-bold border border-blue-400 transition-colors">Upgrade <br><span id="upgCost" class="text-yellow-300 text-xs">$75</span></button>
+                <button onclick="sellTower()" id="btnSell" class="flex-1 bg-red-900/80 hover:bg-red-800 py-2 rounded text-sm font-bold border border-red-700 text-red-200 transition-colors">Sell <br><span id="sellPrice" class="text-yellow-300 text-xs">$25</span></button>
+            </div>
+            <div id="mergeRow" class="hidden border-t border-slate-700 pt-2 mt-1">
+                <button id="btnMerge" onclick="initiateMerge()" class="w-full bg-purple-700 hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed py-2 rounded text-sm font-bold border border-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.4)] transition-all flex items-center justify-center gap-2">
+                    <span class="text-lg">✦</span> CREATE PARAGON
+                </button>
+                <p id="mergeText" class="text-[10px] text-center text-slate-400 mt-1">Requires 3 matching towers</p>
+            </div>
+        </div>
+
+        <!-- QUIT CONFIRMATION MODAL -->
+        <div id="quitModal" class="hidden absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center">
+            <div class="bg-slate-900 border-2 border-slate-600 p-8 rounded-2xl text-center shadow-2xl max-w-sm w-full mx-4 pointer-events-auto">
+                <h2 class="text-2xl font-bold mb-4 text-white">Quit to Menu?</h2>
+                <p class="text-slate-300 mb-8">Current progress will be lost.</p>
+                <div class="flex gap-4 justify-center">
+                    <button onclick="hideQuitModal()" class="bg-slate-600 hover:bg-slate-500 text-white py-2 px-6 rounded-lg transition-colors">Cancel</button>
+                    <button onclick="confirmQuit()" class="bg-red-600 hover:bg-red-500 text-white py-2 px-6 rounded-lg transition-colors font-bold">Quit</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over / Win Modal --><div id="modal" class="hidden absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center">
+            <div class="bg-slate-900 border-2 border-slate-600 p-8 rounded-2xl text-center shadow-2xl max-w-md w-full mx-4 pointer-events-auto">
+                <h2 id="modalTitle" class="text-4xl font-bold mb-4 text-white">GAME OVER</h2>
+                <p id="modalMessage" class="text-slate-300 mb-8 text-lg">You survived 5 waves.</p>
+                <button onclick="goToMainMenu()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-full shadow-lg">Main Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extra Styles for Map Cards -->
+    <style>
+        .map-card {
+            display: flex; flex-direction: column; items-center; justify-center;
+            border-radius: 1rem; border-width: 4px; overflow: hidden;
+            aspect-ratio: 1/1; transition: all 0.2s;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .map-card:hover { transform: scale(1.05); border-color: #facc15; }
+        .map-icon { font-size: 3rem; margin-bottom: 0.5rem; transition: transform 0.2s; }
+        .map-card:hover .map-icon { transform: scale(1.1); }
+        .map-title { font-weight: bold; color: white; font-size: 0.85rem; letter-spacing: 0.05em; text-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 10; }
+        .map-desc { font-size: 0.65rem; margin-top: 0.25rem; color: #cbd5e1; z-index: 10; }
+    </style>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // --- COMPENDIUM DATA ---
+    const GAME_GUIDE = {
+        enemies: [
+            { id: 'guard', name: 'Guard', hp: '80', speed: 'Avg', bounty: '15', desc: 'Standard enemy unit.', color: '#94a3b8', type: 'basic' },
+            { id: 'basic', name: 'Scout', hp: '50', speed: 'Fast', bounty: '10', desc: 'Weak but fast.', color: '#3b82f6', type: 'basic' },
+            { id: 'goblin', name: 'Goblin', hp: '40', speed: 'Fast', bounty: '8', desc: 'Greedy green creature.', color: '#4ade80', type: 'basic' },
+            { id: 'skeleton', name: 'Skeleton', hp: '30', speed: 'Avg', bounty: '5', desc: 'Fragile undead.', color: '#f1f5f9', type: 'basic' },
+            { id: 'bat', name: 'Bat', hp: '25', speed: 'V.Fast', bounty: '8', desc: 'Flying pest.', color: '#1e293b', type: 'basic' },
+            { id: 'orc', name: 'Orc', hp: '120', speed: 'Avg', bounty: '18', desc: 'Tough green warrior.', color: '#166534', type: 'basic' },
+            { id: 'bandit', name: 'Bandit', hp: '90', speed: 'Fast', bounty: '20', desc: 'Fast rogue.', color: '#7c2d12', type: 'basic' },
+            { id: 'ghost', name: 'Ghost', hp: '80', speed: 'Slow', bounty: '25', desc: 'Spooky & Stealthy.', color: '#cbd5e1', type: 'stealth' },
+            { id: 'viking', name: 'Viking', hp: '200', speed: 'Avg', bounty: '35', desc: 'Northern raider.', color: '#1e3a8a', type: 'basic' },
+            { id: 'samurai', name: 'Samurai', hp: '180', speed: 'Fast', bounty: '40', desc: 'Disciplined warrior.', color: '#991b1b', type: 'basic' },
+            { id: 'drone', name: 'Drone', hp: '60', speed: 'V.Fast', bounty: '30', desc: 'Mechanical flyer.', color: '#0ea5e9', type: 'basic' },
+            { id: 'troll', name: 'Troll', hp: '600', speed: 'Slow', bounty: '80', desc: 'Regenerates health.', color: '#3f6212', type: 'heavy' },
+            { id: 'ent', name: 'Ent', hp: '800', speed: 'V.Slow', bounty: '100', desc: 'Walking tree.', color: '#365314', type: 'heavy' },
+            { id: 'gargoyle', name: 'Gargoyle', hp: '350', speed: 'Avg', bounty: '60', desc: 'Stone skin armor.', color: '#57534e', type: 'armored' },
+            { id: 'sorcerer', name: 'Sorcerer', hp: '250', speed: 'Avg', bounty: '70', desc: 'Magical unit.', color: '#7e22ce', type: 'basic' },
+            { id: 'shade', name: 'Shade', hp: '200', speed: 'Fast', bounty: '80', desc: 'Deadly shadow stealth.', color: '#0f172a', type: 'stealth' },
+            { id: 'slime', name: 'Slime', hp: '500', speed: 'Slow', bounty: '50', desc: 'Sticky blob.', color: '#84cc16', type: 'heavy' },
+            { id: 'yeti', name: 'Yeti', hp: '1000', speed: 'Slow', bounty: '120', desc: 'Ice monster.', color: '#f0f9ff', type: 'heavy' },
+            { id: 'magma_golem', name: 'Magma Golem', hp: '1500', speed: 'Slow', bounty: '200', desc: 'Molten armor.', color: '#7f1d1d', type: 'armored' },
+            { id: 'cyborg', name: 'Cyborg', hp: '900', speed: 'Fast', bounty: '150', desc: 'Future soldier armor.', color: '#0891b2', type: 'armored' },
+            { id: 'dark_knight', name: 'Dark Knight', hp: '2000', speed: 'Slow', bounty: '300', desc: 'Heavily armored elite.', color: '#020617', type: 'armored' },
+            { id: 'tank', name: 'Tank', hp: '3500', speed: 'Crawl', bounty: '500', desc: 'Military vehicle.', color: '#14532d', type: 'armored' },
+            { id: 'sneak', name: 'Sneak', hp: '70', speed: 'V.Fast', bounty: '25', desc: 'Stealthy unit. Spawns every 5 rounds.', color: '#059669', type: 'stealth' },
+            { id: 'knight', name: 'Knight', hp: '150', speed: 'Slow', bounty: '20', desc: 'Durable armored unit.', color: '#eab308', type: 'armored' },
+            { id: 'assassin', name: 'Assassin', hp: '120', speed: 'V.Fast', bounty: '60', desc: 'Invisible to most towers.', color: '#000000', type: 'stealth' },
+            { id: 'healer', name: 'Healer', hp: '100', speed: 'Avg', bounty: '40', desc: 'Heals nearby allies.', color: '#f472b6', type: 'support' },
+            { id: 'wizard', name: 'Wizard', hp: '300', speed: 'Slow', bounty: '80', desc: 'Buffs ally movement speed.', color: '#3b82f6', type: 'support' },
+            { id: 'mech', name: 'Mech', hp: '400', speed: 'Slow', bounty: '100', desc: 'Mechanical walker.', color: '#d946ef', type: 'heavy' },
+            { id: 'mech-rider', name: 'Mech Rider', hp: '500', speed: 'Slow', bounty: '100', desc: 'Spawns a Knight on death.', color: '#a21caf', type: 'heavy' },
+            { id: 'reinforced_mech', name: 'H. Mech', hp: '800', speed: 'Slow', bounty: '150', desc: 'Heavy armor reduces damage.', color: '#57534e', type: 'armored' },
+            { id: 'reinforced_ninja', name: 'Dark Ninja', hp: '1200', speed: 'Fast', bounty: '200', desc: 'Stealth + Armor. Immune to non-fire/explosive.', color: '#171717', type: 'boss' },
+            { id: 'boss', name: 'The Boss', hp: '2000', speed: 'Slow', bounty: '500', desc: 'A tough adversary.', color: '#a855f7', type: 'boss' },
+            { id: 'prince', name: 'Prince', hp: '10k', speed: 'Avg', bounty: '1k', desc: 'Mini-boss. Vulnerable to Poison.', color: '#a855f7', type: 'boss' },
+            { id: 'king', name: 'The King', hp: '50k', speed: 'Slow', bounty: '2k', desc: 'Major boss with heavy armor.', color: '#eab308', type: 'boss' },
+            { id: 'emperor', name: 'Emperor', hp: '1M', speed: 'Crawl', bounty: '10k', desc: 'The ultimate threat. Prismatic armor.', color: 'linear-gradient(to right, red, violet)', type: 'boss' },
+        ]
+    };
+
+    // --- MAPS CONFIGURATION ---
+    const MAPS = {
+        garden: {
+            name: "Garden", bgColor: "#6ab04c", sceneryType: 'forest',
+            paths: [[{x: 0.06, y: 0.25}, {x: 0.2, y: 0.25}, {x: 0.2, y: 0.7}, {x: 0.5, y: 0.7}, {x: 0.5, y: 0.3}, {x: 0.8, y: 0.3}, {x: 0.8, y: 0.75}, {x: 0.94, y: 0.75}]],
+            waterZones: []
+        },
+        rainforest: {
+            name: "Rainforest", bgColor: "#1a472a", sceneryType: 'jungle',
+            paths: [[{x: 0.05, y: 0.8}, {x: 0.2, y: 0.8}, {x: 0.2, y: 0.4}, {x: 0.4, y: 0.4}, {x: 0.4, y: 0.2}, {x: 0.7, y: 0.2}, {x: 0.7, y: 0.6}, {x: 0.95, y: 0.6}]],
+            waterZones: [[{x:0, y:0.45}, {x:1, y:0.45}, {x:1, y:0.65}, {x:0, y:0.65}]] 
+        },
+        red_bridge: {
+            name: "Red Bridge", bgColor: "#0f172a", sceneryType: 'bridge',
+            paths: [[{x: 0, y: 0.5}, {x: 1, y: 0.5}]],
+            waterZones: [[{x:0, y:0}, {x:1, y:0}, {x:1, y:0.42}, {x:0, y:0.42}], [{x:0, y:0.58}, {x:1, y:0.58}, {x:1, y:1}, {x:0, y:1}]]
+        },
+        city: {
+            name: "City", bgColor: "#334155", sceneryType: 'city',
+            paths: [[{x:0.1, y:0.1}, {x:0.1, y:0.9}, {x:0.3, y:0.9}, {x:0.3, y:0.1}, {x:0.5, y:0.1}, {x:0.5, y:0.9}, {x:0.7, y:0.9}, {x:0.7, y:0.1}, {x:0.9, y:0.1}, {x:0.9, y:0.9}]],
+            waterZones: []
+        },
+        crossing_roads: {
+            name: "Crossing Roads", bgColor: "#1e293b", sceneryType: 'city',
+            paths: [
+                [{x:0, y:0.5}, {x:1, y:0.5}], 
+                [{x:0.5, y:0}, {x:0.5, y:1}]
+            ],
+            waterZones: []
+        },
+        volcano: {
+            name: "Classic Volcano", bgColor: "#2a0a0a", sceneryType: 'volcano',
+            paths: [[{x:0.5, y:0}, {x:0.1, y:0.2}, {x:0.1, y:0.8}, {x:0.9, y:0.8}, {x:0.9, y:0.2}, {x:0.5, y:0}]],
+            waterZones: [[{x:0.3, y:0.3}, {x:0.7, y:0.3}, {x:0.7, y:0.7}, {x:0.3, y:0.7}]] 
+        },
+        staggered: {
+            name: "Staggered", bgColor: "#475569", sceneryType: 'rocky',
+            paths: [[{x:0, y:0.8}, {x:0.2, y:0.8}, {x:0.2, y:0.6}, {x:0.4, y:0.6}, {x:0.4, y:0.4}, {x:0.6, y:0.4}, {x:0.6, y:0.2}, {x:0.8, y:0.2}, {x:0.8, y:0}]],
+            waterZones: []
+        },
+        rainbow_heights: {
+            name: "Rainbow Heights", bgColor: "#fdf4ff", sceneryType: 'rainbow',
+            paths: [[{x:0, y:0.5}, {x:0.2, y:0.2}, {x:0.4, y:0.8}, {x:0.6, y:0.2}, {x:0.8, y:0.8}, {x:1, y:0.5}]],
+            waterZones: []
+        },
+        light_paradise: {
+            name: "Light Paradise", bgColor: "#e0f2fe", sceneryType: 'paradise',
+            paths: [[{x:0.5, y:1}, {x:0.5, y:0.5}, {x:0.2, y:0.2}, {x:0.8, y:0.2}, {x:0.5, y:0.5}]],
+            waterZones: []
+        },
+        cursed: {
+            name: "Cursed Path", bgColor: "#2e1065", sceneryType: 'magic',
+            paths: [
+                [{x:0, y:0.5}, {x:0.4, y:0.5}], 
+                [{x:0.6, y:0.5}, {x:1, y:0.5}]  
+            ],
+            waterZones: [[{x:0.4, y:0}, {x:0.6, y:0}, {x:0.6, y:1}, {x:0.4, y:1}]],
+            isCursed: true
+        },
+        graveyard: {
+            name: "Graveyard", bgColor: "#020617", sceneryType: 'castle',
+            paths: [[{x:0.1, y:0.2}, {x:0.9, y:0.2}, {x:0.9, y:0.5}, {x:0.1, y:0.5}, {x:0.1, y:0.8}, {x:0.9, y:0.8}]],
+            waterZones: [],
+            isGraveyard: true
+        },
+        the_loop: {
+            name: "The Loop", bgColor: "#312e81", sceneryType: 'circles',
+            paths: [[
+                {x:0.1, y:0.9}, {x:0.1, y:0.1}, {x:0.9, y:0.1}, {x:0.9, y:0.9},
+                {x:0.2, y:0.9}, {x:0.2, y:0.2}, {x:0.8, y:0.2}, {x:0.8, y:0.8},
+                {x:0.3, y:0.8}, {x:0.3, y:0.3}, {x:0.7, y:0.3}, {x:0.7, y:0.7}, {x:0.5, y:0.5}
+            ]],
+            waterZones: []
+        },
+        castle_doors: {
+            name: "Castle Doors", bgColor: "#1c1917", sceneryType: 'castle',
+            paths: [
+                [{x:0, y:0.3}, {x:0.4, y:0.3}, {x:0.4, y:0.5}, {x:0.8, y:0.5}], 
+                [{x:0, y:0.7}, {x:0.4, y:0.7}, {x:0.4, y:0.5}, {x:0.8, y:0.5}]  
+            ],
+            waterZones: []
+        },
+        watersprouts: {
+            name: "Water Sprouts", bgColor: "#0e7490", sceneryType: 'ocean',
+            paths: [[{x: 0.1, y: 0.1}, {x: 0.3, y: 0.1}, {x: 0.3, y: 0.8}, {x: 0.6, y: 0.8}, {x: 0.6, y: 0.2}, {x: 0.9, y: 0.2}, {x: 0.9, y: 0.9}]],
+            waterZones: [[{x:0, y:0}, {x:1, y:0}, {x:1, y:1}, {x:0, y:1}]]
+        },
+        stump: {
+            name: "The Stump", bgColor: "#3e2723", sceneryType: 'forest',
+            paths: [[{x: 0.1, y: 0.1}, {x: 0.3, y: 0.1}, {x: 0.3, y: 0.4}, {x: 0.4, y: 0.4}, {x: 0.4, y: 0.6}, {x: 0.6, y: 0.6}, {x: 0.6, y: 0.4}, {x: 0.7, y: 0.4}, {x: 0.7, y: 0.8}, {x: 0.9, y: 0.8}]],
+            waterZones: [[{x:0.7, y:0}, {x:1, y:0}, {x:0.3, y:1}, {x:0, y:1}]],
+            specialFeature: { type: 'stump', x: 0.5, y: 0.5, radius: 30 }
+        },
+        enchanted: {
+            name: "Enchanted Grove", bgColor: "#115e59", sceneryType: 'magic',
+            paths: [
+                [{x: 0.5, y: 0.05}, {x: 0.5, y: 0.35}, {x: 0.3, y: 0.5}, {x: 0.3, y: 0.7}, {x: 0.5, y: 0.85}, {x: 0.2, y: 0.85}, {x: 0.1, y: 0.95}],
+                [{x: 0.5, y: 0.05}, {x: 0.5, y: 0.35}, {x: 0.7, y: 0.5}, {x: 0.7, y: 0.7}, {x: 0.5, y: 0.85}, {x: 0.8, y: 0.85}, {x: 0.9, y: 0.95}]
+            ],
+            waterZones: [[{x:0.05, y:0.1}, {x:0.2, y:0.1}, {x:0.2, y:0.3}, {x:0.05, y:0.3}], [{x:0.8, y:0.1}, {x:0.95, y:0.1}, {x:0.95, y:0.3}, {x:0.8, y:0.3}]]
+        },
+        treeparadise: {
+            name: "Tree Paradise", bgColor: "#14532d", sceneryType: 'dense_forest',
+            paths: [[{x: 0.1, y: 0.9}, {x: 0.1, y: 0.2}, {x: 0.3, y: 0.2}, {x: 0.3, y: 0.8}, {x: 0.5, y: 0.8}, {x: 0.5, y: 0.2}, {x: 0.7, y: 0.2}, {x: 0.7, y: 0.8}, {x: 0.9, y: 0.8}, {x: 0.9, y: 0.1}]],
+            waterZones: []
+        },
+        four_circles: {
+            name: "The 4 Circles", bgColor: "#84cc16", sceneryType: 'circles',
+            paths: [
+                [{x:0, y:0.25}, {x:0.25, y:0.25}, {x:0.25, y:0.1}, {x:0.1, y:0.1}, {x:0.1, y:0.4}, {x:0.25, y:0.4}, {x:0.25, y:0.25}, 
+                 {x:0.5, y:0.5}, {x:0.75, y:0.75}, {x:0.75, y:0.9}, {x:0.9, y:0.9}, {x:0.9, y:0.6}, {x:0.75, y:0.6}, {x:0.75, y:0.75}],
+                [{x:1, y:0.25}, {x:0.75, y:0.25}, {x:0.75, y:0.1}, {x:0.9, y:0.1}, {x:0.9, y:0.4}, {x:0.75, y:0.4}, {x:0.75, y:0.25},
+                 {x:0.5, y:0.5}, {x:0.25, y:0.75}, {x:0.25, y:0.9}, {x:0.1, y:0.9}, {x:0.1, y:0.6}, {x:0.25, y:0.6}, {x:0.25, y:0.75}]
+            ],
+            waterZones: []
+        },
+        dark_castle: {
+            name: "Dark Castle", bgColor: "#1c1917", sceneryType: 'castle',
+            paths: [[{x:0.5, y:1}, {x:0.5, y:0.8}, {x:0.2, y:0.8}, {x:0.2, y:0.6}, {x:0.8, y:0.6}, {x:0.8, y:0.4}, {x:0.5, y:0.4}, {x:0.5, y:0.1}]],
+            waterZones: [[{x:0, y:0.82}, {x:0.45, y:0.82}, {x:0.45, y:1}, {x:0, y:1}], [{x:0.55, y:0.82}, {x:1, y:0.82}, {x:1, y:1}, {x:0.55, y:1}]]
+        },
+        spiral: {
+            name: "The Spiral", bgColor: "#312e81", sceneryType: 'magic',
+            paths: [[ // Approximation of a spiral
+                {x:0, y:0}, {x:0.9, y:0.1}, {x:0.9, y:0.9}, {x:0.1, y:0.9}, {x:0.1, y:0.2}, 
+                {x:0.8, y:0.2}, {x:0.8, y:0.8}, {x:0.2, y:0.8}, {x:0.2, y:0.3}, {x:0.7, y:0.3},
+                {x:0.7, y:0.7}, {x:0.3, y:0.7}, {x:0.3, y:0.4}, {x:0.5, y:0.5}
+            ]],
+            waterZones: []
+        },
+        covered_garden: {
+            name: "Covered Garden", bgColor: "#064e3b", sceneryType: 'forest',
+            paths: [[{x:0.1, y:0.9}, {x:0.1, y:0.1}, {x:0.9, y:0.1}, {x:0.9, y:0.9}, {x:0.5, y:0.9}, {x:0.5, y:0.5}]],
+            waterZones: [],
+            isCovered: true
+        },
+        glass_layer: {
+            name: "Glass Layer", bgColor: "#0891b2", sceneryType: 'ocean',
+            paths: [[{x:0.1, y:0.5}, {x:0.9, y:0.5}]],
+            waterZones: [[{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}]], // Full water background effectively
+            isGlassFloor: true
+        },
+        // --- 20 NEW MAPS ---
+        desert_oasis: {
+            name: "Desert Oasis", bgColor: "#eab308", sceneryType: 'desert',
+            paths: [[{x:0, y:0.5}, {x:0.3, y:0.5}, {x:0.3, y:0.2}, {x:0.7, y:0.2}, {x:0.7, y:0.8}, {x:0.3, y:0.8}, {x:0.3, y:0.5}, {x:1, y:0.5}]],
+            waterZones: [[{x:0.4, y:0.4}, {x:0.6, y:0.4}, {x:0.6, y:0.6}, {x:0.4, y:0.6}]]
+        },
+        frozen_tundra: {
+            name: "Frozen Tundra", bgColor: "#eff6ff", sceneryType: 'rocky',
+            paths: [[{x:0, y:0}, {x:0.2, y:0}, {x:0.2, y:1}, {x:0.4, y:1}, {x:0.4, y:0}, {x:0.6, y:0}, {x:0.6, y:1}, {x:0.8, y:1}, {x:0.8, y:0}, {x:1, y:0}]],
+            waterZones: []
+        },
+        lava_lake: {
+            name: "Lava Lake", bgColor: "#7f1d1d", sceneryType: 'volcano',
+            paths: [[{x:0.5, y:0}, {x:0.5, y:0.2}, {x:0.2, y:0.2}, {x:0.2, y:0.8}, {x:0.8, y:0.8}, {x:0.8, y:0.2}, {x:0.5, y:0.2}, {x:0.5, y:0.5}]],
+            waterZones: [[{x:0.3, y:0.3}, {x:0.7, y:0.3}, {x:0.7, y:0.7}, {x:0.3, y:0.7}]]
+        },
+        space_station: {
+            name: "Space Station", bgColor: "#0f172a", sceneryType: 'city',
+            paths: [[{x:0, y:0.5}, {x:0.2, y:0.5}, {x:0.2, y:0.2}, {x:0.8, y:0.2}, {x:0.8, y:0.8}, {x:0.2, y:0.8}, {x:0.2, y:0.5}, {x:1, y:0.5}]],
+            waterZones: []
+        },
+        cloud_kingdom: {
+            name: "Cloud Kingdom", bgColor: "#bae6fd", sceneryType: 'cloud',
+            paths: [[{x:0, y:0.8}, {x:0.2, y:0.2}, {x:0.4, y:0.8}, {x:0.6, y:0.2}, {x:0.8, y:0.8}, {x:1, y:0.2}]],
+            waterZones: []
+        },
+        circuit_board: {
+            name: "Circuit Board", bgColor: "#064e3b", sceneryType: 'city',
+            paths: [[{x:0, y:0.1}, {x:0.9, y:0.1}, {x:0.9, y:0.3}, {x:0.1, y:0.3}, {x:0.1, y:0.5}, {x:0.9, y:0.5}, {x:0.9, y:0.7}, {x:0.1, y:0.7}, {x:0.1, y:0.9}, {x:1, y:0.9}]],
+            waterZones: []
+        },
+        candy_land: {
+            name: "Candy Land", bgColor: "#fce7f3", sceneryType: 'rainbow',
+            paths: [[{x:0, y:0.5}, {x:0.3, y:0.5}, {x:0.3, y:0.2}, {x:0.5, y:0.2}, {x:0.5, y:0.8}, {x:0.7, y:0.8}, {x:0.7, y:0.5}, {x:1, y:0.5}]],
+            waterZones: []
+        },
+        haunted_swamp: {
+            name: "Haunted Swamp", bgColor: "#3f3f46", sceneryType: 'dense_forest',
+            paths: [[{x:0, y:0.2}, {x:0.2, y:0.8}, {x:0.4, y:0.2}, {x:0.6, y:0.8}, {x:0.8, y:0.2}, {x:1, y:0.8}]],
+            waterZones: [[{x:0, y:0.4}, {x:1, y:0.4}, {x:1, y:0.6}, {x:0, y:0.6}]]
+        },
+        the_maze: {
+            name: "The Maze", bgColor: "#334155", sceneryType: 'city',
+            paths: [[{x:0, y:0}, {x:0.1, y:0}, {x:0.1, y:0.9}, {x:0.2, y:0.9}, {x:0.2, y:0.1}, {x:0.3, y:0.1}, {x:0.3, y:0.9}, {x:0.4, y:0.9}, {x:0.4, y:0.1}, {x:0.5, y:0.1}, {x:0.5, y:0.9}, {x:0.6, y:0.9}, {x:0.6, y:0.1}, {x:0.7, y:0.1}, {x:0.7, y:0.9}, {x:0.8, y:0.9}, {x:0.8, y:0.1}, {x:0.9, y:0.1}, {x:0.9, y:0.9}, {x:1, y:0.9}]],
+            waterZones: []
+        },
+        double_cross: {
+            name: "Double Cross", bgColor: "#475569", sceneryType: 'city',
+            paths: [
+                [{x:0, y:0}, {x:1, y:1}],
+                [{x:0, y:1}, {x:1, y:0}]
+            ],
+            waterZones: []
+        },
+        island_hopping: {
+            name: "Island Hopping", bgColor: "#0e7490", sceneryType: 'ocean',
+            paths: [[{x:0, y:0.2}, {x:0.2, y:0.2}, {x:0.2, y:0.8}, {x:0.5, y:0.8}, {x:0.5, y:0.2}, {x:0.8, y:0.2}, {x:0.8, y:0.8}, {x:1, y:0.8}]],
+            waterZones: [[{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}]] // Full water, visual islands via scenery or imagination
+        },
+        the_canyon: {
+            name: "The Canyon", bgColor: "#78350f", sceneryType: 'rocky',
+            paths: [[{x:0.5, y:0}, {x:0.5, y:1}]],
+            waterZones: [[{x:0, y:0}, {x:0.4, y:0}, {x:0.4, y:1}, {x:0, y:1}], [{x:0.6, y:0}, {x:1, y:0}, {x:1, y:1}, {x:0.6, y:1}]]
+        },
+        zen_garden: {
+            name: "Zen Garden", bgColor: "#f5f5f4", sceneryType: 'rocky',
+            paths: [[{x:0.5, y:0.1}, {x:0.9, y:0.5}, {x:0.5, y:0.9}, {x:0.1, y:0.5}, {x:0.5, y:0.1}]],
+            waterZones: []
+        },
+        industrial: {
+            name: "Industrial", bgColor: "#52525b", sceneryType: 'city',
+            paths: [[{x:0, y:0.5}, {x:1, y:0.5}]],
+            waterZones: [[{x:0, y:0.2}, {x:1, y:0.2}, {x:1, y:0.3}, {x:0, y:0.3}], [{x:0, y:0.7}, {x:1, y:0.7}, {x:1, y:0.8}, {x:0, y:0.8}]]
+        },
+        crystal_cavern: {
+            name: "Crystal Cavern", bgColor: "#312e81", sceneryType: 'magic',
+            paths: [[{x:0, y:0.5}, {x:0.2, y:0.2}, {x:0.4, y:0.5}, {x:0.6, y:0.8}, {x:0.8, y:0.5}, {x:1, y:0.5}]],
+            waterZones: []
+        },
+        beehive: {
+            name: "Beehive", bgColor: "#fef08a", sceneryType: 'honey',
+            paths: [[{x:0.1, y:0.5}, {x:0.2, y:0.3}, {x:0.3, y:0.5}, {x:0.4, y:0.7}, {x:0.5, y:0.5}, {x:0.6, y:0.3}, {x:0.7, y:0.5}, {x:0.8, y:0.7}, {x:0.9, y:0.5}]],
+            waterZones: []
+        },
+        the_void: {
+            name: "The Void", bgColor: "#000000", sceneryType: 'magic',
+            paths: [[{x:0, y:0.5}, {x:0.3, y:0.5}, {x:0.3, y:0.2}, {x:0.7, y:0.2}, {x:0.7, y:0.5}, {x:1, y:0.5}]],
+            waterZones: [[{x:0, y:0}, {x:1, y:0}, {x:1, y:1}, {x:0, y:1}]] // Full void
+        },
+        snake_pit: {
+            name: "Snake Pit", bgColor: "#365314", sceneryType: 'jungle',
+            paths: [[{x:0.5, y:0}, {x:0.6, y:0.1}, {x:0.4, y:0.2}, {x:0.6, y:0.3}, {x:0.4, y:0.4}, {x:0.6, y:0.5}, {x:0.4, y:0.6}, {x:0.6, y:0.7}, {x:0.4, y:0.8}, {x:0.5, y:1}]],
+            waterZones: []
+        },
+        pyramid: {
+            name: "Pyramid", bgColor: "#ca8a04", sceneryType: 'desert',
+            paths: [[{x:0, y:0}, {x:1, y:0}, {x:1, y:1}, {x:0, y:1}, {x:0, y:0.2}, {x:0.8, y:0.2}, {x:0.8, y:0.8}, {x:0.2, y:0.8}, {x:0.2, y:0.4}, {x:0.5, y:0.5}]],
+            waterZones: []
+        },
+        checkered: {
+            name: "Checkered", bgColor: "#171717", sceneryType: 'city',
+            paths: [[{x:0, y:0}, {x:1, y:1}]],
+            waterZones: []
+        }
+    };
+
+    const TOWER_TYPES = {
+        basic: { name: 'Turret', cost: 50, range: 120, damage: 20, cooldown: 40, color: '#22d3ee', projectileColor: '#67e8f9', bulletSpeed: 8, effect: null, locked: false },
+        barracks: { name: 'Barracks', cost: 150, range: 80, damage: 5, cooldown: 180, color: '#7f1d1d', projectileColor: null, bulletSpeed: 0, effect: null, isBarracks: true, locked: false, desc: "Spawns 3 soldiers to block enemies." },
+        sniper: { name: 'Sniper', cost: 120, range: 250, damage: 100, cooldown: 120, color: '#10b981', projectileColor: '#6ee7b7', bulletSpeed: 15, effect: null, locked: false },
+        rapid: { name: 'Blaster', cost: 200, range: 110, damage: 12, cooldown: 5, color: '#f43f5e', projectileColor: '#fda4af', bulletSpeed: 12, effect: null, locked: false },
+        fire: { name: 'Inferno', cost: 250, range: 100, damage: 15, cooldown: 30, color: '#f97316', projectileColor: '#fb923c', bulletSpeed: 7, effect: 'burn', locked: false },
+        ice: { name: 'Glacial', cost: 150, range: 130, damage: 10, cooldown: 45, color: '#38bdf8', projectileColor: '#bae6fd', bulletSpeed: 9, effect: 'freeze', locked: false },
+        hero: { name: 'Guardian', cost: 1500, range: 180, damage: 250, cooldown: 35, color: '#fbbf24', projectileColor: '#fff', bulletSpeed: 18, effect: 'shock', locked: false, isHero: true, limit: 1, desc: "Legendary Hero. High damage." },
+        paladin: { name: 'Paladin', cost: 1200, range: 150, damage: 300, cooldown: 50, color: '#e2e8f0', projectileColor: '#fcd34d', bulletSpeed: 12, effect: 'burn', locked: false, isHero: true, limit: 1, desc: "Hero Unit. Holy Fire AOE." },
+        ninja: { name: 'Ninja', cost: 175, range: 140, damage: 18, cooldown: 15, color: '#0f172a', projectileColor: '#e2e8f0', bulletSpeed: 14, effect: null, locked: true, shopPrice: 300, desc: "See & hit invisible Assassins. Lvl 5 adds FIRE.", quantity: 0, camoDetection: true },
+        void: { name: 'Void', cost: 500, range: 150, damage: 40, cooldown: 80, color: '#171717', projectileColor: '#000000', bulletSpeed: 6, effect: 'void', locked: false, amphibious: true },
+        cannon: { name: 'Cannon Ship', cost: 350, range: 200, damage: 80, cooldown: 60, color: '#475569', projectileColor: '#1e293b', bulletSpeed: 5, effect: 'explosive', waterOnly: true, locked: false },
+        submarine: { name: 'Submarine', cost: 600, range: 220, damage: 60, cooldown: 20, color: '#eab308', projectileColor: '#fef08a', bulletSpeed: 8, effect: null, waterOnly: true, locked: true, shopPrice: 500, desc: "High fire rate water unit.", quantity: 0 },
+        spike: { name: 'Spike Trap', cost: 25, range: 25, damage: 40, cooldown: 50, color: '#78716c', projectileColor: null, bulletSpeed: 0, effect: null, isTrap: true, locked: true, shopPrice: 100, desc: "Consumable trap. Damages enemies on path.", quantity: 0 },
+        poison: { name: 'Prince Poison', cost: 100, range: 20, damage: 99999, cooldown: 0, color: '#a855f7', projectileColor: null, bulletSpeed: 0, effect: null, isTrap: true, locked: true, shopPrice: 250, desc: "Instantly kills the Prince.", quantity: 0 },
+        bank: { name: 'Bank', cost: 1000, range: 0, damage: 0, cooldown: 180, color: '#fbbf24', projectileColor: null, bulletSpeed: 0, effect: 'income', locked: true, shopPrice: 1000, desc: "Generates $20 every 3 seconds.", quantity: 0 }
+    };
+
+    // --- GAME STATE ---
+    let currentMapKey = 'garden';
+    let currentMapData = MAPS['garden'];
+    let gameStarted = false;
+    let gamePaused = false; 
+    let money = 100, lives = 20, wave = 1, waveActive = false;
+    let frameCount = 0, gameOver = false, gameSpeed = 1;
+    let isMerging = false, mergeCandidates = [];
+    let metaMoney = 1000; 
+    
+    // Difficulty Settings
+    let difficultySpeedMult = 1.0;
+    let difficultyStartMoney = 100;
+
+    // New Map Mechanics State
+    let coveredGardenQuadrant = 0; // 0=BL, 1=TL, 2=TR, 3=BR
+    
+    // --- PERSISTENCE LOGIC (SAVE/LOAD) ---
+    const SAVE_KEY = 'garden_td_save_v1';
+
+    function saveGame() {
+        const data = {
+            metaMoney: metaMoney,
+            towers: {}
+        };
+        for (const [key, val] of Object.entries(TOWER_TYPES)) {
+            // Only save purchasable/unlockable items state to keep file size small
+            if (val.shopPrice) {
+                data.towers[key] = {
+                    locked: val.locked,
+                    quantity: val.quantity || 0
+                };
+            }
+        }
+        localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+        // console.log("Game Saved"); // Debug
+    }
+
+    function loadGame() {
+        const saved = localStorage.getItem(SAVE_KEY);
+        if (saved) {
+            try {
+                const data = JSON.parse(saved);
+                if (data.metaMoney !== undefined) metaMoney = data.metaMoney;
+                if (data.towers) {
+                    for (const [key, val] of Object.entries(data.towers)) {
+                        if (TOWER_TYPES[key]) {
+                            TOWER_TYPES[key].locked = val.locked;
+                            if (val.quantity !== undefined) TOWER_TYPES[key].quantity = val.quantity;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Save file corrupted", e);
+            }
+        }
+    }
+
+    // Load immediately on startup
+    loadGame();
+
+    const towers = [];
+    const enemies = [];
+    const projectiles = [];
+    const particles = [];
+    const floatingTexts = [];
+    const coins = []; // New array for coins
+    const soldiers = []; // New array for barracks soldiers
+    let spawnQueue = [];
+    let pathWaypoints = []; 
+    let scenery = [];
+    let spawnTimer = 0; 
+    
+    let selectedTowerType = null;
+    let selectedTower = null;
+    let mouseX = 0, mouseY = 0;
+
+    // --- UI NAVIGATION ---
+    function goToMainMenu() {
+        document.getElementById('startScreen').classList.remove('hidden');
+        document.getElementById('modal').classList.add('hidden');
+        document.getElementById('gameUI').classList.add('hidden');
+        document.getElementById('mapSelection').classList.add('hidden');
+        document.getElementById('difficultySelection').classList.add('hidden');
+        document.getElementById('shopMenu').classList.add('hidden');
+        document.getElementById('skinMenu').classList.add('hidden');
+        document.getElementById('compendiumMenu').classList.add('hidden');
+        document.getElementById('quitModal').classList.add('hidden'); 
+        gameStarted = false;
+        gamePaused = false;
+    }
+
+    function backToStart() {
+        document.getElementById('shopMenu').classList.add('hidden');
+        document.getElementById('skinMenu').classList.add('hidden');
+        document.getElementById('compendiumMenu').classList.add('hidden');
+        document.getElementById('mapSelection').classList.add('hidden');
+        document.getElementById('startScreen').classList.remove('hidden');
+    }
+    
+    function backToMap() {
+        document.getElementById('difficultySelection').classList.add('hidden');
+        document.getElementById('mapSelection').classList.remove('hidden');
+    }
+
+    function showQuitModal() { gamePaused = true; document.getElementById('quitModal').classList.remove('hidden'); }
+    function hideQuitModal() { gamePaused = false; document.getElementById('quitModal').classList.add('hidden'); }
+    function confirmQuit() { hideQuitModal(); goToMainMenu(); }
+
+    function openShop() { document.getElementById('startScreen').classList.add('hidden'); document.getElementById('shopMenu').classList.remove('hidden'); renderShop(); }
+    function openSkinShop() { document.getElementById('startScreen').classList.add('hidden'); document.getElementById('skinMenu').classList.remove('hidden'); }
+
+    // --- COMPENDIUM LOGIC ---
+    function openCompendium() { 
+        document.getElementById('startScreen').classList.add('hidden'); 
+        document.getElementById('compendiumMenu').classList.remove('hidden'); 
+        renderCompendium('enemies');
+    }
+
+    function renderCompendium(tab) {
+        const container = document.getElementById('compendiumContent');
+        const tabE = document.getElementById('tabEnemies');
+        const tabT = document.getElementById('tabTowers');
+        container.innerHTML = '';
+
+        if (tab === 'enemies') {
+            tabE.className = "px-6 py-2 rounded-md font-bold text-sm transition-all bg-cyan-600 text-white shadow-lg";
+            tabT.className = "px-6 py-2 rounded-md font-bold text-sm text-slate-400 hover:text-white transition-all";
+            
+            GAME_GUIDE.enemies.forEach(e => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-800 rounded-xl p-4 border border-slate-700 flex flex-col gap-3 shadow-md hover:border-cyan-500/50 transition-colors";
+                
+                // Icon Gen
+                let iconStyle = `background: ${e.color}`;
+                if(e.color.includes('gradient')) iconStyle = `background: ${e.color}`;
+                
+                let statsHtml = `
+                    <div class="grid grid-cols-2 gap-2 text-xs text-slate-400 mt-2">
+                        <div class="bg-slate-900 px-2 py-1 rounded">HP: <span class="text-white">${e.hp}</span></div>
+                        <div class="bg-slate-900 px-2 py-1 rounded">Spd: <span class="text-white">${e.speed}</span></div>
+                        <div class="bg-slate-900 px-2 py-1 rounded">Gold: <span class="text-yellow-400">${e.bounty}</span></div>
+                        <div class="bg-slate-900 px-2 py-1 rounded capitalize">Type: <span class="text-white">${e.type}</span></div>
+                    </div>
+                `;
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full border-2 border-slate-600 shadow-inner flex items-center justify-center shrink-0" style="${iconStyle}">
+                            ${e.id === 'reinforced_ninja' || e.id === 'assassin' || e.id === 'sneak' ? '🥷' : ''}
+                            ${e.type === 'boss' && e.id !== 'reinforced_ninja' ? '👑' : ''}
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-lg text-white">${e.name}</h3>
+                            <p class="text-xs text-slate-400 italic">${e.desc}</p>
+                        </div>
+                    </div>
+                    ${statsHtml}
+                `;
+                container.appendChild(card);
+            });
+        } else {
+            tabE.className = "px-6 py-2 rounded-md font-bold text-sm text-slate-400 hover:text-white transition-all";
+            tabT.className = "px-6 py-2 rounded-md font-bold text-sm transition-all bg-cyan-600 text-white shadow-lg";
+            
+            for (const [key, t] of Object.entries(TOWER_TYPES)) {
+                if(key === 'basic') continue; // Skip generic name if wanted, but fine to keep
+                const card = document.createElement('div');
+                card.className = "bg-slate-800 rounded-xl p-4 border border-slate-700 flex flex-col gap-3 shadow-md hover:border-yellow-500/50 transition-colors";
+                
+                let iconContent = `<div class="w-10 h-10 rounded-full" style="background:${t.color}"></div>`;
+                if(t.waterOnly) iconContent = `<div class="w-10 h-10 rounded-full flex items-center justify-center text-xl bg-blue-900">⛵</div>`;
+                if(t.isTrap) iconContent = `<div class="w-10 h-10 rounded-full flex items-center justify-center text-xl bg-stone-700">⚙️</div>`;
+                
+                let statsHtml = `
+                    <div class="grid grid-cols-2 gap-2 text-xs text-slate-400 mt-2">
+                        <div class="bg-slate-900 px-2 py-1 rounded">Dmg: <span class="text-white">${t.damage}</span></div>
+                        <div class="bg-slate-900 px-2 py-1 rounded">Rng: <span class="text-white">${t.range}</span></div>
+                        <div class="bg-slate-900 px-2 py-1 rounded">Cost: <span class="text-yellow-400">${t.cost}</span></div>
+                        <div class="bg-slate-900 px-2 py-1 rounded">CD: <span class="text-white">${t.cooldown}</span></div>
+                    </div>
+                `;
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="shrink-0">${iconContent}</div>
+                        <div>
+                            <h3 class="font-bold text-lg text-white">${t.name}</h3>
+                            <p class="text-xs text-slate-400 italic">${t.desc || 'Standard defensive tower.'}</p>
+                        </div>
+                    </div>
+                    ${statsHtml}
+                `;
+                container.appendChild(card);
+            }
+        }
+    }
+
+    function renderShop() {
+        const container = document.getElementById('shopContainer');
+        document.getElementById('shopGoldDisplay').innerText = metaMoney;
+        container.innerHTML = '';
+        for (const [key, data] of Object.entries(TOWER_TYPES)) {
+            if (!data.shopPrice) continue; 
+            const card = document.createElement('div');
+            card.className = `bg-slate-800 rounded-xl p-4 border ${data.locked && key !== 'spike' ? 'border-slate-600' : 'border-yellow-500'} flex flex-col gap-2 relative overflow-hidden h-64 shadow-lg transform transition-all hover:scale-[1.02]`;
+            let iconContent = `<div class="w-12 h-12 rounded-full flex items-center justify-center text-2xl shadow-inner" style="background:${data.color}">${data.waterOnly ? '🌊' : ''}</div>`;
+            if(data.isTrap) iconContent = `<div class="w-12 h-12 rounded-full flex items-center justify-center text-2xl bg-stone-700 shadow-inner">⚙️</div>`;
+            if(key === 'poison') iconContent = `<div class="w-12 h-12 rounded-full flex items-center justify-center text-2xl bg-purple-900 shadow-inner">☠️</div>`;
+            if(key === 'bank') iconContent = `<div class="w-12 h-12 rounded-full flex items-center justify-center text-2xl bg-yellow-700 shadow-inner">🏦</div>`;
+            if(key === 'ninja') iconContent = `<div class="w-12 h-12 rounded-full flex items-center justify-center text-2xl bg-slate-950 border border-slate-600 shadow-inner">🥷</div>`;
+            const icon = `<div class="h-16 flex items-center justify-center bg-slate-900/50 rounded-lg mb-1">${iconContent}</div>`;
+            let btnHtml = '';
+            let statusText = '&nbsp;'; 
+            if (key === 'spike') {
+                const canAfford = metaMoney >= data.shopPrice;
+                btnHtml = `<button onclick="buyItem('${key}')" class="w-full h-10 rounded font-bold ${canAfford ? 'bg-yellow-600 hover:bg-yellow-500 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed'} transition-colors flex items-center justify-center">Buy (+1) ${data.shopPrice} G</button>`;
+                statusText = `<span class="text-yellow-300">Owned: ${data.quantity}</span>`;
+            } else if (data.locked) {
+                const canAfford = metaMoney >= data.shopPrice;
+                btnHtml = `<button onclick="buyItem('${key}')" class="w-full h-10 rounded font-bold ${canAfford ? 'bg-yellow-600 hover:bg-yellow-500 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed'} transition-colors flex items-center justify-center">Unlock ${data.shopPrice} G</button>`;
+            } else { btnHtml = `<button disabled class="w-full h-10 rounded font-bold bg-green-900/50 text-green-400 border border-green-700 cursor-default flex items-center justify-center">✓ OWNED</button>`; }
+            card.innerHTML = `${icon}<div class="text-center flex-grow flex flex-col"><h3 class="text-lg font-bold text-white leading-tight">${data.name}</h3><p class="text-xs text-slate-400 mt-1 leading-snug h-8 overflow-hidden flex items-center justify-center">${data.desc || 'A powerful tower.'}</p></div><div class="mt-auto w-full">${btnHtml}<div class="text-center text-[10px] mt-1 h-4">${statusText}</div></div>`;
+            container.appendChild(card);
+        }
+    }
+
+    function buyItem(key) {
+        const item = TOWER_TYPES[key];
+        if (item && metaMoney >= item.shopPrice) {
+            if (key === 'spike') { metaMoney -= item.shopPrice; item.quantity = (item.quantity || 0) + 1; item.locked = false; } 
+            else if (item.locked) { metaMoney -= item.shopPrice; item.locked = false; }
+            saveGame(); // Save on purchase
+            renderShop(); 
+        }
+    }
+
+    function openMapSelection() { document.getElementById('startScreen').classList.add('hidden'); document.getElementById('mapSelection').classList.remove('hidden'); }
+    
+    function selectMap(mapKey) { 
+        currentMapKey = mapKey; 
+        currentMapData = MAPS[mapKey]; 
+        // Instead of starting game immediately, show difficulty selection
+        document.getElementById('mapSelection').classList.add('hidden');
+        document.getElementById('difficultySelection').classList.remove('hidden');
+    }
+    
+    function selectDifficulty(level) {
+        if (level === 'easy') {
+            difficultyStartMoney = 150;
+            difficultySpeedMult = 1.0;
+        } else if (level === 'medium') {
+            difficultyStartMoney = 100;
+            difficultySpeedMult = 1.0;
+        } else if (level === 'hard') {
+            difficultyStartMoney = 100;
+            difficultySpeedMult = 1.1; // 10% faster
+        }
+        startGame();
+    }
+
+    function startGame() {
+        document.getElementById('difficultySelection').classList.add('hidden');
+        document.getElementById('gameUI').classList.remove('hidden');
+        
+        money = difficultyStartMoney;
+        lives = 20; 
+        wave = 1;
+        
+        towers.length = 0; enemies.length = 0; projectiles.length = 0;
+        particles.length = 0; floatingTexts.length = 0; coins.length = 0; soldiers.length = 0;
+        gameOver = false; waveActive = false; gameSpeed = 1; gameStarted = true;
+        
+        coveredGardenQuadrant = 0;
+        
+        // Show Special Map Text
+        const specDisplay = document.getElementById('mapSpecialDisplay');
+        const specDiv = document.getElementById('mapSpecialText');
+        if (currentMapData.isGraveyard) { specDisplay.innerText = "BLOOD MOON ACTIVE"; specDisplay.classList.remove('hidden'); specDiv.classList.remove('hidden'); }
+        else if (currentMapData.isCovered) { specDisplay.innerText = "GLASS SHIFTING"; specDisplay.classList.remove('hidden'); specDiv.classList.remove('hidden'); }
+        else if (currentMapData.isGlassFloor) { specDisplay.innerText = "UNSTABLE FLOOR"; specDisplay.classList.remove('hidden'); specDiv.classList.remove('hidden'); }
+        else { specDisplay.classList.add('hidden'); specDiv.classList.add('hidden'); }
+
+        generateTowerButtons();
+        resizeCanvas();
+        updateUI();
+    }
+
+    function generateTowerButtons() {
+        const container = document.getElementById('towerButtonsContainer');
+        container.innerHTML = '';
+        for (const [type, data] of Object.entries(TOWER_TYPES)) {
+            if (data.locked && type !== 'spike') continue;
+            if (type === 'spike' && data.quantity <= 0) continue;
+            const btn = document.createElement('button');
+            btn.className = 'tower-btn group relative w-20 h-24 min-w-[5rem] bg-slate-800 rounded-lg border-2 border-slate-600 hover:border-white hover:bg-slate-700 transition-all flex flex-col items-center justify-center gap-1 focus:outline-none';
+            btn.id = `btn-${type}`;
+            btn.onclick = () => selectTower(type);
+            let icon = '', qtyBadge = '';
+            if (data.waterOnly) {
+                if (type === 'submarine') icon = `<div class="text-2xl">🟡</div>`;
+                else icon = `<div class="text-2xl">⛵</div>`;
+            } else if (data.isTrap) {
+                if (type === 'poison') icon = `<div class="text-2xl">☠️</div>`;
+                else icon = `<div class="text-2xl">⚙️</div>`;
+                if (type === 'spike') qtyBadge = `<span class="absolute top-1 right-1 bg-blue-600 text-white text-[10px] px-1 rounded-full">x${data.quantity}</span>`;
+            } else if (type === 'bank') { icon = `<div class="text-2xl">🏦</div>`; } 
+            else if (type === 'ninja') { icon = `<div class="text-2xl">🥷</div>`; }
+            else if (type === 'hero') { icon = `<div class="text-2xl">🛡️</div>`; }
+            else if (type === 'paladin') { icon = `<div class="text-2xl">⚔️</div>`; }
+            else if (type === 'barracks') { icon = `<div class="text-2xl">⛺</div>`; }
+            else { icon = `<div class="w-4 h-4 rounded-full" style="background:${data.color}"></div>`; }
+            btn.innerHTML = `${qtyBadge}${icon}<span class="text-xs font-bold text-gray-200">${data.name}</span><span class="text-xs text-yellow-400 font-mono">$${data.cost}</span>`;
+            container.appendChild(btn);
+        }
+    }
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        if (gameStarted) { calculatePath(); generateScenery(); }
+    }
+    
+    function calculatePath() {
+        // Handle Map scaling
+        pathWaypoints = currentMapData.paths.map(singlePath => 
+            singlePath.map(p => ({
+                x: p.x * canvas.width,
+                y: p.y * canvas.height
+            }))
+        );
+    }
+    
+    function generateScenery() {
+        scenery = [];
+        let count = currentMapData.sceneryType === 'dense_forest' ? 150 : 60;
+        if (currentMapData.sceneryType === 'circles') count = 20; 
+        if (currentMapData.sceneryType === 'castle') count = 40;
+        if (currentMapData.sceneryType === 'city') count = 50;
+        if (currentMapData.sceneryType === 'volcano') count = 45;
+        if (currentMapData.sceneryType === 'bridge') count = 15;
+        if (currentMapData.sceneryType === 'rainbow') count = 30;
+        if (currentMapData.sceneryType === 'desert') count = 40;
+        if (currentMapData.sceneryType === 'honey') count = 50;
+
+        for (let i = 0; i < count; i++) {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            const scale = 0.8 + Math.random() * 0.5;
+            let type = 'tree';
+            
+            if (currentMapData.sceneryType === 'circles') type = 'flower_bed';
+            else if (currentMapData.sceneryType === 'castle') type = Math.random() > 0.7 ? 'torch' : 'ruin_stone';
+            else if (currentMapData.sceneryType === 'city') type = Math.random() > 0.6 ? 'building' : 'street_lamp';
+            else if (currentMapData.sceneryType === 'bridge') type = 'bridge_post';
+            else if (currentMapData.sceneryType === 'volcano') type = Math.random() > 0.8 ? 'magma_rock' : 'crater';
+            else if (currentMapData.sceneryType === 'rainbow') type = Math.random() > 0.5 ? 'cloud' : 'star';
+            else if (currentMapData.sceneryType === 'paradise') type = 'glow_orb';
+            else if (currentMapData.sceneryType === 'jungle') type = Math.random() > 0.6 ? 'palm' : 'bush';
+            else if (currentMapData.sceneryType === 'ocean') type = Math.random() > 0.7 ? 'rock' : 'bubble';
+            else if (currentMapData.sceneryType === 'desert') type = Math.random() > 0.7 ? 'rock' : 'palm';
+            else if (currentMapData.sceneryType === 'honey') type = 'honey_drop';
+            else if (currentMapData.sceneryType === 'cloud') type = 'cloud';
+            else if (currentMapData.sceneryType === 'magic') {
+                const dist = Math.abs(x - canvas.width/2);
+                type = dist > canvas.width * 0.35 ? 'pink_tree' : (Math.random() > 0.7 ? 'ruin_stone' : 'firefly');
+            } else if (currentMapData.sceneryType === 'dense_forest') type = Math.random() > 0.3 ? 'tree' : 'bush';
+            else type = Math.random() > 0.5 ? 'tree' : 'rock';
+            if (currentMapKey === 'stump' && Math.random() > 0.7) type = 'mushroom';
+
+            let safe = true;
+            for(let path of pathWaypoints) {
+                for(let j=0; j<path.length-1; j++) {
+                    if(pointToSegmentDistance(x, y, path[j].x, path[j].y, path[j+1].x, path[j+1].y) < 60) safe = false;
+                }
+            }
+            if (currentMapData.specialFeature && Math.hypot(x - currentMapData.specialFeature.x * canvas.width, y - currentMapData.specialFeature.y * canvas.height) < 50) safe = false;
+            if (currentMapData.sceneryType !== 'ocean' && !currentMapData.isGlassFloor && type !== 'firefly' && type !== 'bridge_post' && isPointInWater(x, y)) safe = false;
+            
+            // Bridge posts only in water near path
+            if (type === 'bridge_post') {
+                safe = isPointInWater(x, y); // Must be in water
+            }
+
+            if (safe) scenery.push({x, y, type, scale});
+        }
+        scenery.sort((a,b) => a.y - b.y);
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function isPointInWater(x, y) {
+        const nx = x / canvas.width, ny = y / canvas.height;
+        // Special case for Glass Layer or Lighthouse (full water effect)
+        if (currentMapData.isGlassFloor) return true;
+
+        for (let zone of currentMapData.waterZones) {
+            let inside = false;
+            for (let i = 0, j = zone.length - 1; i < zone.length; j = i++) {
+                const xi = zone[i].x, yi = zone[i].y;
+                const xj = zone[j].x, yj = zone[j].y;
+                const intersect = ((yi > ny) != (yj > ny)) && (nx < (xj - xi) * (ny - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            if (inside) return true;
+        }
+        return false;
+    }
+
+    function isUnderGlass(x, y) {
+        if (!currentMapData.isCovered) return false;
+        const isLeft = x < canvas.width * 0.5;
+        const isTop = y < canvas.height * 0.5;
+        let quadrant = -1;
+        if (isLeft && !isTop) quadrant = 0; // BL
+        else if (isLeft && isTop) quadrant = 1; // TL
+        else if (!isLeft && isTop) quadrant = 2; // TR
+        else if (!isLeft && !isTop) quadrant = 3; // BR
+        return quadrant !== coveredGardenQuadrant;
+    }
+
+    function isValidPlacement(x, y) {
+        if (x < 20 || x > canvas.width - 20 || y < 80 || y > canvas.height - 100) return false;
+        const config = TOWER_TYPES[selectedTowerType];
+        
+        // Hero Limit Check
+        if (config.isHero) {
+            if (towers.some(t => t.config.isHero)) {
+                 addFloatingText(x, y, "Only 1 Hero!", "red");
+                 return false;
+            }
+        }
+        
+        // Covered Garden Constraint
+        if (currentMapData.isCovered && isUnderGlass(x, y)) return false;
+
+        let onPath = false;
+        for(let path of pathWaypoints) {
+            for (let i = 0; i < path.length - 1; i++) {
+                const dist = pointToSegmentDistance(x, y, path[i].x, path[i].y, path[i+1].x, path[i+1].y);
+                if (dist < 35) onPath = true; 
+                if (!config.isTrap && dist < 40) return false;
+            }
+        }
+        if (config.isTrap && !onPath) return false;
+        const collisionDist = config.isTrap ? 25 : 40;
+        for (const t of towers) if (Math.hypot(t.x - x, t.y - y) < collisionDist) return false;
+        if (config.isTrap) return true; 
+
+        const inWater = isPointInWater(x, y);
+        if (currentMapKey === 'stump') {
+            const sx = 0.5 * canvas.width, sy = 0.5 * canvas.height;
+            if (Math.hypot(x - sx, y - sy) < 35) return !config.waterOnly; 
+        }
+        if (config.amphibious) return true;
+        if (config.waterOnly && !inWater) return false;
+        if (!config.waterOnly && inWater && !currentMapData.isGlassFloor) return false; 
+        if (currentMapData.isGlassFloor && !config.waterOnly) return true; // Can build normal on glass
+        return true;
+    }
+
+    class Enemy {
+        constructor(type, waveNumber) {
+            this.type = type; 
+            this.waypointIndex = 0;
+            this.blockedBy = null; 
+            
+            // Cursed Map: Bosses skip to segment 2 immediately
+            const isBoss = (type === 'boss' || type === 'prince' || type === 'king' || type === 'emperor');
+            if (currentMapData.isCursed && isBoss) {
+                this.pathIndex = 1; // Second segment
+            } else {
+                this.pathIndex = 0;
+            }
+            
+            // For maps with multiple start points
+            if (!currentMapData.isCursed && pathWaypoints.length > 1) {
+                this.pathIndex = Math.floor(Math.random() * pathWaypoints.length);
+            }
+
+            this.path = pathWaypoints[this.pathIndex];
+            this.x = this.path[0].x;
+            this.y = this.path[0].y;
+            
+            this.freezeTimer = 0; this.burnTimer = 0; this.voidTimer = 0; this.speedBuffTimer = 0; this.regenTimer = 0;
+            this.isArmored = false;
+            this.isStealthed = false;
+            
+            let hpMult = 1.0 + (waveNumber * 0.2);
+            if (currentMapData.isGraveyard) hpMult *= 1.15;
+
+            // --- STATS DEFINITION ---
+            // BOSSES
+            if (type === 'emperor') { this.maxHealth = 1000000; this.baseSpeed = 0.2; this.bounty = 10000; this.radius = 40; this.isArmored = true; }
+            else if (type === 'king') { this.maxHealth = 50000 * hpMult; this.baseSpeed = 0.3; this.bounty = 2000; this.radius = 35; this.isArmored = true; }
+            else if (type === 'prince') { this.maxHealth = 10000 * hpMult; this.baseSpeed = 0.6; this.bounty = 1000; this.radius = 30; }
+            else if (type === 'boss') { this.maxHealth = 2000 * hpMult; this.baseSpeed = 0.5; this.bounty = 500; this.color = '#a855f7'; this.radius = 25; }
+            
+            // SPECIALS
+            else if (type === 'reinforced_ninja') { this.maxHealth = 1200 * hpMult; this.baseSpeed = 1.5; this.bounty = 200; this.color = '#171717'; this.radius = 16; this.isStealthed = true; this.isArmored = true; }
+            else if (type === 'sneak') { this.maxHealth = 70 * hpMult; this.baseSpeed = 2.5; this.bounty = 25; this.color = '#059669'; this.radius = 12; this.isStealthed = true; }
+            else if (type === 'wizard') { this.maxHealth = 300 * hpMult; this.baseSpeed = 0.8; this.bounty = 80; this.color = '#3b82f6'; this.radius = 18; this.buffCooldown = 0; }
+            
+            // NEW ENEMIES (20)
+            else if (type === 'goblin') { this.maxHealth = 40 * hpMult; this.baseSpeed = 1.6; this.bounty = 8; this.color = '#4ade80'; this.radius = 9; }
+            else if (type === 'skeleton') { this.maxHealth = 30 * hpMult; this.baseSpeed = 1.2; this.bounty = 5; this.color = '#f1f5f9'; this.radius = 9; }
+            else if (type === 'bat') { this.maxHealth = 25 * hpMult; this.baseSpeed = 2.8; this.bounty = 8; this.color = '#1e293b'; this.radius = 7; }
+            else if (type === 'orc') { this.maxHealth = 120 * hpMult; this.baseSpeed = 1.1; this.bounty = 18; this.color = '#166534'; this.radius = 13; }
+            else if (type === 'bandit') { this.maxHealth = 90 * hpMult; this.baseSpeed = 1.8; this.bounty = 20; this.color = '#7c2d12'; this.radius = 11; }
+            else if (type === 'ghost') { this.maxHealth = 80 * hpMult; this.baseSpeed = 0.8; this.bounty = 25; this.color = '#cbd5e1'; this.radius = 12; this.isStealthed = true; }
+            else if (type === 'viking') { this.maxHealth = 200 * hpMult; this.baseSpeed = 1.2; this.bounty = 35; this.color = '#1e3a8a'; this.radius = 14; }
+            else if (type === 'samurai') { this.maxHealth = 180 * hpMult; this.baseSpeed = 1.9; this.bounty = 40; this.color = '#991b1b'; this.radius = 12; }
+            else if (type === 'drone') { this.maxHealth = 60 * hpMult; this.baseSpeed = 3.0; this.bounty = 30; this.color = '#0ea5e9'; this.radius = 8; }
+            else if (type === 'troll') { this.maxHealth = 600 * hpMult; this.baseSpeed = 0.7; this.bounty = 80; this.color = '#3f6212'; this.radius = 20; } // Regens
+            else if (type === 'ent') { this.maxHealth = 800 * hpMult; this.baseSpeed = 0.5; this.bounty = 100; this.color = '#365314'; this.radius = 22; }
+            else if (type === 'gargoyle') { this.maxHealth = 350 * hpMult; this.baseSpeed = 1.3; this.bounty = 60; this.color = '#57534e'; this.radius = 16; this.isArmored = true; }
+            else if (type === 'sorcerer') { this.maxHealth = 250 * hpMult; this.baseSpeed = 0.9; this.bounty = 70; this.color = '#7e22ce'; this.radius = 15; }
+            else if (type === 'shade') { this.maxHealth = 200 * hpMult; this.baseSpeed = 2.0; this.bounty = 80; this.color = '#0f172a'; this.radius = 12; this.isStealthed = true; }
+            else if (type === 'slime') { this.maxHealth = 500 * hpMult; this.baseSpeed = 0.6; this.bounty = 50; this.color = '#84cc16'; this.radius = 18; }
+            else if (type === 'yeti') { this.maxHealth = 1000 * hpMult; this.baseSpeed = 0.8; this.bounty = 120; this.color = '#f0f9ff'; this.radius = 24; }
+            else if (type === 'magma_golem') { this.maxHealth = 1500 * hpMult; this.baseSpeed = 0.5; this.bounty = 200; this.color = '#7f1d1d'; this.radius = 25; this.isArmored = true; }
+            else if (type === 'cyborg') { this.maxHealth = 900 * hpMult; this.baseSpeed = 1.6; this.bounty = 150; this.color = '#0891b2'; this.radius = 16; this.isArmored = true; }
+            else if (type === 'dark_knight') { this.maxHealth = 2000 * hpMult; this.baseSpeed = 0.9; this.bounty = 300; this.color = '#020617'; this.radius = 22; this.isArmored = true; }
+            else if (type === 'tank') { this.maxHealth = 3500 * hpMult; this.baseSpeed = 0.4; this.bounty = 500; this.color = '#14532d'; this.radius = 28; this.isArmored = true; }
+
+            // STANDARD
+            else if (type === 'assassin') { this.maxHealth = 120 * hpMult; this.baseSpeed = 2.2; this.bounty = 60; this.color = '#000000'; this.radius = 12; this.isStealthed = true; }
+            else if (type === 'healer') { this.maxHealth = 100 * hpMult; this.baseSpeed = 1.2; this.bounty = 40; this.color = '#f472b6'; this.radius = 14; this.healCooldown = 0; }
+            else if (type === 'knight') { this.maxHealth = 150 * hpMult; this.baseSpeed = 1.0; this.bounty = 20; this.color = '#eab308'; this.radius = 12; }
+            else if (type === 'guard') { this.maxHealth = 80 * hpMult; this.baseSpeed = 1.4; this.bounty = 15; this.color = '#94a3b8'; this.radius = 11; }
+            else if (type === 'mech') { this.maxHealth = 400 * hpMult; this.baseSpeed = 0.4; this.bounty = 100; this.color = '#d946ef'; this.radius = 16; }
+            else if (type === 'mech-rider') { this.maxHealth = 500 * hpMult; this.baseSpeed = 0.4; this.bounty = 100; this.color = '#a21caf'; this.radius = 18; }
+            else if (type === 'reinforced_mech') { this.maxHealth = 800 * hpMult; this.baseSpeed = 0.3; this.bounty = 150; this.color = '#57534e'; this.radius = 20; this.isArmored = true; }
+            else { this.maxHealth = 50 * hpMult; this.baseSpeed = 1.8; this.bounty = 10; this.color = '#3b82f6'; this.radius = 10; } // Basic
+            
+            // Modifiers
+            if (currentMapData.isGraveyard) this.baseSpeed *= 1.15;
+            this.baseSpeed *= difficultySpeedMult;
+            
+            this.health = this.maxHealth;
+        }
+        
+        update() {
+            let spd = this.baseSpeed;
+            if (this.voidTimer > 0) { spd = 0; this.voidTimer--; }
+            else if (this.freezeTimer > 0) { spd *= 0.5; this.freezeTimer--; }
+            else if (this.blockedBy && this.blockedBy.hp > 0) { spd = 0; }
+
+            if (this.speedBuffTimer > 0) { spd *= 1.5; this.speedBuffTimer--; }
+            
+            if (this.burnTimer > 0) { if(frameCount % 15 === 0) this.health -= 5; this.burnTimer--; }
+            
+            // Troll Regen
+            if (this.type === 'troll' && this.health < this.maxHealth) {
+                if (frameCount % 60 === 0) { this.health += this.maxHealth * 0.02; createParticles(this.x, this.y, '#84cc16', 2); }
+            }
+
+            // Healer/Wizard Logic
+            if (this.type === 'healer' && this.healCooldown <= 0) {
+                const ally = enemies.find(e => e !== this && e.health < e.maxHealth && Math.hypot(e.x-this.x, e.y-this.y) < 150);
+                if (ally) { ally.health += 50; if(ally.health > ally.maxHealth) ally.health = ally.maxHealth; this.healCooldown = 60; createParticles(ally.x, ally.y, '#4ade80', 5); }
+            } else if (this.type === 'healer') { this.healCooldown--; }
+            
+            if (this.type === 'wizard' && this.buffCooldown <= 0) {
+                const allies = enemies.filter(e => e !== this && Math.hypot(e.x-this.x, e.y-this.y) < 150).slice(0, 3);
+                if (allies.length > 0) {
+                    allies.forEach(a => { a.speedBuffTimer = 120; createParticles(a.x, a.y, '#3b82f6', 5); });
+                    this.buffCooldown = 180;
+                }
+            } else if (this.type === 'wizard') { this.buffCooldown--; }
+
+            const target = this.path[this.waypointIndex + 1];
+            if (!target) {
+                if (currentMapData.isCursed && this.pathIndex === 0) {
+                    this.pathIndex = 1;
+                    this.path = pathWaypoints[1];
+                    this.waypointIndex = 0;
+                    this.x = this.path[0].x;
+                    this.y = this.path[0].y;
+                    createParticles(this.x, this.y, '#8b5cf6', 15);
+                    addFloatingText(this.x, this.y, "WARP!", "#a855f7");
+                    return false;
+                }
+                return true;
+            }
+            const dx = target.x - this.x, dy = target.y - this.y, dist = Math.hypot(dx, dy);
+            if (dist < spd) {
+                this.x = target.x; this.y = target.y; this.waypointIndex++;
+                if (this.waypointIndex >= this.path.length - 1) { 
+                    if (currentMapData.isCursed && this.pathIndex === 0) {
+                        this.pathIndex = 1;
+                        this.path = pathWaypoints[1];
+                        this.waypointIndex = 0;
+                        this.x = this.path[0].x;
+                        this.y = this.path[0].y;
+                        createParticles(this.x, this.y, '#8b5cf6', 15);
+                        return false;
+                    }
+                    takeDamage(this.type === 'emperor' ? 1000 : (this.type === 'king' ? 100 : (this.type === 'boss' || this.type === 'dark_knight' || this.type === 'tank' ? 20 : 1))); 
+                    return true; 
+                }
+            } else { this.x += (dx/dist)*spd; this.y += (dy/dist)*spd; }
+            return false;
+        }
+        
+        draw() {
+            ctx.save();
+            if (this.isStealthed) ctx.globalAlpha = 0.3; 
+            
+            if (this.type === 'emperor') {
+                const grad = ctx.createLinearGradient(this.x-20, this.y-20, this.x+20, this.y+20);
+                grad.addColorStop(0, "red"); grad.addColorStop(0.2, "orange"); grad.addColorStop(0.4, "yellow"); grad.addColorStop(0.6, "green"); grad.addColorStop(0.8, "blue"); grad.addColorStop(1, "violet");
+                ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill();
+                ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.stroke();
+                ctx.fillStyle = 'gold'; ctx.beginPath(); ctx.moveTo(this.x-15, this.y-25); ctx.lineTo(this.x-8, this.y-40); ctx.lineTo(this.x, this.y-25); ctx.lineTo(this.x+8, this.y-40); ctx.lineTo(this.x+15, this.y-25); ctx.fill();
+            }
+            else if (this.type === 'king') {
+                ctx.fillStyle = '#eab308'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = '#854d0e'; ctx.lineWidth = 3; ctx.stroke();
+                ctx.fillStyle = 'red'; ctx.fillRect(this.x-10, this.y-10, 20, 20); 
+            }
+            // Visuals for New Enemies
+            else if (this.type === 'goblin') { ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#14532d'; ctx.beginPath(); ctx.moveTo(this.x-8,this.y-5); ctx.lineTo(this.x-12,this.y-12); ctx.lineTo(this.x-4,this.y-8); ctx.fill(); ctx.beginPath(); ctx.moveTo(this.x+8,this.y-5); ctx.lineTo(this.x+12,this.y-12); ctx.lineTo(this.x+4,this.y-8); ctx.fill();}
+            else if (this.type === 'skeleton') { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(this.x-3, this.y-2, 2, 0, Math.PI*2); ctx.arc(this.x+3, this.y-2, 2, 0, Math.PI*2); ctx.fill(); }
+            else if (this.type === 'bat') { ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(this.x, this.y, 5, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(this.x-10, this.y-8); ctx.lineTo(this.x-5, this.y); ctx.fill(); ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(this.x+10, this.y-8); ctx.lineTo(this.x+5, this.y); ctx.fill();}
+            else if (this.type === 'ghost' || this.type === 'shade') { ctx.fillStyle = this.color; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.arc(this.x, this.y-2, this.radius, Math.PI, 0); ctx.lineTo(this.x+this.radius, this.y+this.radius); ctx.lineTo(this.x-this.radius, this.y+this.radius); ctx.fill(); ctx.globalAlpha = this.isStealthed ? 0.3 : 1.0; }
+            else if (this.type === 'slime') { ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y+2, this.radius, Math.PI, 0); ctx.lineTo(this.x+this.radius, this.y+5); ctx.quadraticCurveTo(this.x, this.y+10, this.x-this.radius, this.y+5); ctx.fill(); }
+            else if (this.type === 'drone') { ctx.fillStyle = '#38bdf8'; ctx.fillRect(this.x-6, this.y-6, 12, 12); ctx.strokeStyle = '#000'; ctx.beginPath(); ctx.moveTo(this.x-10, this.y-10); ctx.lineTo(this.x+10, this.y+10); ctx.moveTo(this.x+10, this.y-10); ctx.lineTo(this.x-10, this.y+10); ctx.stroke(); }
+            else if (this.type === 'tank') { ctx.fillStyle = '#14532d'; ctx.fillRect(this.x-12, this.y-12, 24, 24); ctx.fillStyle = '#064e3b'; ctx.beginPath(); ctx.arc(this.x, this.y, 8, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(this.x+15, this.y); ctx.stroke(); }
+            else if (this.type === 'magma_golem') { ctx.fillStyle = '#7f1d1d'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#fca5a5'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius*0.6, 0, Math.PI*2); ctx.fill(); }
+            
+            // Standard Draw Fallback
+            else {
+                ctx.fillStyle = this.color;
+                if (this.voidTimer > 0) ctx.strokeStyle = '#8b5cf6';
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill();
+                if (this.voidTimer > 0) ctx.stroke();
+                if (this.isArmored && !this.type.includes('ninja')) { ctx.strokeStyle = '#a8a29e'; ctx.lineWidth = 3; ctx.stroke(); }
+                // Sneak Mask
+                if (this.type === 'sneak') { ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); ctx.fillStyle = '#000'; ctx.fillRect(this.x-8, this.y-3, 16, 6); }
+            }
+            
+            if (this.speedBuffTimer > 0) {
+                 ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 4, 0, Math.PI*2); ctx.stroke();
+            }
+
+            const hpPct = this.health / this.maxHealth;
+            ctx.fillStyle = 'red'; ctx.fillRect(this.x - 10, this.y - this.radius - 8, 20, 4);
+            ctx.fillStyle = 'lime'; ctx.fillRect(this.x - 10, this.y - this.radius - 8, 20 * hpPct, 4);
+            
+            if (this.type === 'healer') { ctx.fillStyle = '#fff'; ctx.fillText('+', this.x-4, this.y+4); }
+            if ((this.type === 'assassin' || this.type === 'reinforced_ninja' || this.type === 'sneak' || this.type === 'ghost' || this.type === 'shade') && !this.isStealthed) { ctx.fillStyle = '#fff'; ctx.font = '10px Arial'; ctx.fillText('!', this.x-2, this.y+4); }
+            
+            ctx.restore();
+        }
+    }
+
+    class Soldier {
+        constructor(x, y, tower) {
+            this.x = x; this.y = y; 
+            this.tower = tower;
+            this.hp = 60 + (tower.level * 20); 
+            this.maxHp = this.hp;
+            this.damage = 2 + (tower.level); 
+            this.target = null;
+            this.state = 'idle'; // idle, moving, fighting, returning
+            this.color = '#3b82f6';
+        }
+        
+        update() {
+            if (this.hp <= 0) return true; // Dead
+            
+            // Regeneration when idle
+            if (this.state === 'idle' && this.hp < this.maxHp && frameCount % 60 === 0) this.hp += 5;
+
+            // Find target if none or target dead
+            if (!this.target || this.target.health <= 0) {
+                this.target = null;
+                // Look for unblocked enemies in range
+                let closest = null;
+                let minDist = this.tower.range;
+                
+                for(let e of enemies) {
+                    const d = Math.hypot(e.x - this.tower.x, e.y - this.tower.y);
+                    if (d <= this.tower.range && !e.blockedBy && !e.isStealthed) {
+                         if (d < minDist) { minDist = d; closest = e; }
+                    }
+                }
+                this.target = closest;
+            }
+
+            // Movement / Logic
+            if (this.target) {
+                const dx = this.target.x - this.x;
+                const dy = this.target.y - this.y;
+                const dist = Math.hypot(dx, dy);
+                
+                if (dist < 10) {
+                    // Engage
+                    this.state = 'fighting';
+                    if (!this.target.blockedBy) this.target.blockedBy = this;
+                    
+                    // Combat tick
+                    if (frameCount % 30 === 0) {
+                        this.target.health -= this.damage;
+                        this.hp -= 2; // Take damage from enemy
+                        createParticles(this.x, this.y, '#9ca3af', 1);
+                    }
+                } else {
+                    // Move to enemy
+                    this.state = 'moving';
+                    const speed = 1.5;
+                    this.x += (dx/dist) * speed;
+                    this.y += (dy/dist) * speed;
+                }
+            } else {
+                // Return to post (random spot near tower)
+                const tx = this.tower.x + Math.sin(this.tower.soldiers.indexOf(this)*2) * 20;
+                const ty = this.tower.y + Math.cos(this.tower.soldiers.indexOf(this)*2) * 20;
+                const dx = tx - this.x;
+                const dy = ty - this.y;
+                const dist = Math.hypot(dx, dy);
+                
+                if (dist > 5) {
+                    this.state = 'returning';
+                    const speed = 1.0;
+                    this.x += (dx/dist) * speed;
+                    this.y += (dy/dist) * speed;
+                } else {
+                    this.state = 'idle';
+                }
+            }
+            return false;
+        }
+
+        draw() {
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x-4, this.y-4, 8, 8);
+            ctx.fillStyle = '#1e3a8a';
+            ctx.fillRect(this.x-4, this.y-6, 8, 2); // Helmet
+            // HP Bar
+            const hpPct = this.hp / this.maxHp;
+            ctx.fillStyle = 'red'; ctx.fillRect(this.x-5, this.y-10, 10, 2);
+            ctx.fillStyle = '#3b82f6'; ctx.fillRect(this.x-5, this.y-10, 10 * hpPct, 2);
+        }
+    }
+
+    class Coin {
+        constructor(x, y, value) {
+            this.x = x; this.y = y; this.value = value;
+            this.vx = (Math.random() - 0.5) * 4;
+            this.vy = (Math.random() - 1.5) * 4;
+            this.life = 0;
+            this.collected = false;
+        }
+        update() {
+            this.life++;
+            if (!this.collected) {
+                // Physics bounce
+                this.x += this.vx; this.y += this.vy;
+                this.vy += 0.2; // Gravity
+                if (this.life > 30) this.collected = true; // Start flying to UI after delay
+            } else {
+                // Fly to money display (approx coordinates 150, 40)
+                const targetX = 150;
+                const targetY = 40;
+                const dx = targetX - this.x;
+                const dy = targetY - this.y;
+                const dist = Math.hypot(dx, dy);
+                
+                if (dist < 20) {
+                    money += Math.ceil(this.value);
+                    updateUI();
+                    // Visual feedback on UI
+                    const moneyDisp = document.getElementById('moneyDisplay');
+                    moneyDisp.parentElement.classList.remove('coin-flash');
+                    void moneyDisp.parentElement.offsetWidth; // trigger reflow
+                    moneyDisp.parentElement.classList.add('coin-flash');
+                    return true; // Remove
+                }
+                
+                const speed = 15;
+                this.x += (dx/dist) * speed;
+                this.y += (dy/dist) * speed;
+            }
+            return false;
+        }
+        draw() {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            // Spin animation
+            const scaleX = Math.abs(Math.sin(this.life * 0.2));
+            ctx.scale(scaleX, 1);
+            ctx.fillStyle = '#fbbf24';
+            ctx.beginPath(); ctx.arc(0,0, 6, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#d97706'; ctx.lineWidth = 1; ctx.stroke();
+            ctx.fillStyle = '#fef3c7'; ctx.font = '8px Arial'; ctx.textAlign = 'center'; ctx.fillText('$', 0, 3);
+            ctx.restore();
+        }
+    }
+
+    class Tower {
+        constructor(x, y, type) {
+            this.x = x; this.y = y; this.type = type; this.config = TOWER_TYPES[type];
+            this.level = 1; this.damage = this.config.damage; this.range = this.config.range;
+            this.cooldownMax = this.config.cooldown; this.cooldown = 0; this.angle = 0;
+            this.isParagon = false; this.totalInvestment = this.config.cost;
+            this.currentEffect = this.config.effect; // Instance specific effect
+            this.soldiers = []; // For Barracks
+            
+            if (currentMapKey === 'stump' && this.config.effect !== 'income') {
+                const sx = 0.5 * canvas.width, sy = 0.5 * canvas.height;
+                if (Math.hypot(x - sx, y - sy) < 35) { this.range *= 2; addFloatingText(x, y, "2x RANGE!", "#fbbf24"); }
+            }
+        }
+        getUpgradeCost() { return this.isParagon ? 999999 : Math.floor(this.config.cost * 0.75 * this.level); }
+        getSellValue() { return Math.floor(this.totalInvestment * 0.7); }
+        upgrade() { 
+            if(this.isParagon) return; 
+            if(this.config.isHero) return; // Hero can't upgrade (simple logic for now)
+            
+            this.level++; 
+            this.damage = Math.floor(this.damage * 1.4); 
+            this.range *= 1.1; 
+            this.totalInvestment += this.getUpgradeCost();
+            
+            // Ninja Level 5 Upgrade: Adds Fire
+            if (this.type === 'ninja' && this.level === 5) {
+                this.currentEffect = 'burn';
+                addFloatingText(this.x, this.y, "FIRE SHURIKENS!", "#f97316");
+                createParticles(this.x, this.y, "#f97316", 10);
+            }
+        }
+        makeParagon() { this.isParagon = true; this.level = 100; this.damage *= 5; this.range *= 1.5; this.cooldownMax = Math.max(2, this.cooldownMax * 0.5); }
+        update() {
+            // Barracks Logic
+            if (this.config.isBarracks) {
+                // Spawn dead soldiers replacement
+                if (this.soldiers.length < 3) {
+                    if (this.cooldown <= 0) {
+                        const s = new Soldier(this.x, this.y, this);
+                        this.soldiers.push(s);
+                        soldiers.push(s);
+                        this.cooldown = this.cooldownMax;
+                    } else {
+                        this.cooldown--;
+                    }
+                }
+                return; // Barracks don't shoot
+            }
+
+            if (this.cooldown > 0) this.cooldown--;
+            if (this.config.effect === 'income') {
+                if (this.cooldown <= 0) { money += 20; this.cooldown = this.cooldownMax; addFloatingText(this.x, this.y - 10, "+$20", "#fbbf24"); createParticles(this.x, this.y, "#fbbf24", 5); updateUI(); }
+                return;
+            }
+            if (this.config.isTrap) {
+                if (this.type === 'poison') {
+                    for (let i = enemies.length - 1; i >= 0; i--) {
+                        const e = enemies[i];
+                        if (e.type === 'prince' && Math.hypot(e.x - this.x, e.y - this.y) <= this.range) {
+                            e.health = 0; createParticles(e.x, e.y, '#a855f7', 20); addFloatingText(e.x, e.y, "ASSASSINATED!", "#a855f7"); towers.splice(towers.indexOf(this), 1); return; 
+                        }
+                    }
+                    return;
+                }
+                if (this.cooldown <= 0) {
+                    let hit = false;
+                    for (const e of enemies) {
+                        if (Math.hypot(e.x - this.x, e.y - this.y) <= this.range) {
+                            e.health -= this.damage; 
+                            if(e.isStealthed) e.isStealthed = false; 
+                            createParticles(e.x, e.y, '#78716c', 3); hit = true;
+                        }
+                    }
+                    if (hit) this.cooldown = this.cooldownMax;
+                }
+                return;
+            }
+            const target = enemies.find(e => {
+                const inRange = Math.hypot(e.x - this.x, e.y - this.y) <= this.range;
+                const canSee = !e.isStealthed || this.config.camoDetection; 
+                return inRange && canSee;
+            });
+            if (target) {
+                this.angle = Math.atan2(target.y - this.y, target.x - this.x);
+                if (this.cooldown <= 0) {
+                    projectiles.push(new Projectile(this.x, this.y, target, { 
+                        ...this.config, 
+                        damage: this.damage, 
+                        isParagon: this.isParagon,
+                        effect: this.currentEffect // Use currentEffect for upgrades
+                    }));
+                    this.cooldown = this.cooldownMax;
+                }
+            }
+        }
+        draw() {
+            ctx.save(); ctx.translate(this.x, this.y);
+            // Covered Garden Glass Visual on Tower
+            if (currentMapData.isCovered && isUnderGlass(this.x, this.y)) { ctx.globalAlpha = 0.5; }
+            
+            if(this.isParagon) { ctx.strokeStyle = '#fbbf24'; ctx.beginPath(); ctx.arc(0,0,25,0,Math.PI*2); ctx.stroke(); }
+            if (this.type === 'cannon') {
+                ctx.rotate(this.angle); ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.ellipse(0, 0, 20, 10, 0, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI*2); ctx.fill(); ctx.fillRect(0, -3, 20, 6);
+            } else if (this.type === 'submarine') {
+                ctx.rotate(this.angle); ctx.fillStyle = this.isParagon ? '#fbbf24' : '#eab308';
+                ctx.beginPath(); ctx.ellipse(0, 0, 20, 9, 0, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#a16207'; ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(-24, 0); ctx.stroke();
+            } else if (this.type === 'hero') {
+                // Hero Visual
+                ctx.shadowBlur = 10; ctx.shadowColor = 'gold';
+                ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.arc(0,0, 16, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0,0, 8, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = '#78350f'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.shadowBlur = 0;
+            } else if (this.type === 'paladin') {
+                // Paladin Visual
+                ctx.shadowBlur = 15; ctx.shadowColor = '#fcd34d';
+                ctx.fillStyle = '#fcd34d'; ctx.beginPath(); ctx.arc(0,0, 14, 0, Math.PI*2); ctx.fill(); // Aura
+                ctx.fillStyle = '#fff'; ctx.fillRect(-6, -8, 12, 16); // Body
+                ctx.fillStyle = '#9ca3af'; ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(-8, 5); ctx.lineTo(8, 5); ctx.fill(); // Cape
+                ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(0, 8); ctx.stroke();
+                ctx.shadowBlur = 0;
+            } else if (this.type === 'barracks') {
+                // Barracks Visual
+                ctx.fillStyle = '#7f1d1d'; ctx.fillRect(-15, -15, 30, 30);
+                ctx.fillStyle = '#991b1b'; ctx.fillRect(-10, -10, 20, 20);
+                ctx.fillStyle = '#000'; ctx.beginPath(); ctx.moveTo(-5, 10); ctx.lineTo(5, 10); ctx.lineTo(0, 0); ctx.fill(); // Door
+                // Flag
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(10, -10); ctx.lineTo(10, -25); ctx.stroke();
+                ctx.fillStyle = 'blue'; ctx.fillRect(10, -25, 8, 5);
+            } else if (this.type === 'ninja') {
+                ctx.rotate(this.angle); ctx.fillStyle = '#0f172a';
+                ctx.beginPath(); ctx.arc(0, 0, 14, 0, Math.PI*2); ctx.fill(); 
+                ctx.fillStyle = (this.level >= 5) ? '#f97316' : '#ef4444'; // Orange headband if lvl 5
+                ctx.fillRect(-14, -4, 28, 6);
+            } else if (this.type === 'spike') {
+                ctx.fillStyle = '#44403c'; ctx.fillRect(-12, -12, 24, 24); 
+                if (this.cooldown > this.cooldownMax - 15) {
+                    ctx.fillStyle = '#d6d3d1'; ctx.beginPath(); ctx.moveTo(-8, -8); ctx.lineTo(-4, -18); ctx.lineTo(0, -8); ctx.moveTo(0, -8); ctx.lineTo(4, -18); ctx.lineTo(8, -8); ctx.moveTo(-8, 8); ctx.lineTo(-4, -2); ctx.lineTo(0, 8); ctx.moveTo(0, 8); ctx.lineTo(4, -2); ctx.lineTo(8, 8); ctx.fill();
+                } else {
+                    ctx.fillStyle = '#1c1917'; ctx.beginPath(); ctx.arc(-5, -5, 2, 0, Math.PI*2); ctx.arc(5, 5, 2, 0, Math.PI*2); ctx.arc(5, -5, 2, 0, Math.PI*2); ctx.arc(-5, 5, 2, 0, Math.PI*2); ctx.fill();
+                }
+            } else if (this.type === 'poison') {
+                ctx.fillStyle = '#581c87'; ctx.beginPath(); ctx.arc(0, 5, 10, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#a855f7'; ctx.beginPath(); ctx.arc(0, 5, 7, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#94a3b8'; ctx.fillRect(-4, -12, 8, 10); ctx.fillStyle = '#fcd34d'; ctx.fillRect(-5, -14, 10, 4); ctx.fillStyle = '#fff'; ctx.font = '10px Arial'; ctx.textAlign = 'center'; ctx.fillText('☠', 0, 8);
+            } else if (this.type === 'bank') {
+                ctx.fillStyle = '#78350f'; ctx.fillRect(-15, -10, 30, 20); ctx.fillStyle = '#fbbf24'; ctx.beginPath(); ctx.moveTo(-18, -10); ctx.lineTo(0, -25); ctx.lineTo(18, -10); ctx.fill(); ctx.fillStyle = '#451a03'; ctx.fillRect(-5, 0, 10, 10); ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Arial'; ctx.textAlign = 'center'; ctx.fillText('$', 0, -5);
+                if (this.cooldown < 10) { ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0,0, 20, 0, Math.PI*2); ctx.stroke(); }
+            } else {
+                ctx.rotate(this.angle); ctx.fillStyle = this.isParagon ? '#fbbf24' : this.config.color;
+                ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI*2); ctx.fill(); ctx.fillRect(0, -3, 20, 6);
+            }
+            ctx.restore();
+        }
+    }
+
+    class Projectile {
+        constructor(x, y, target, config) {
+            this.x = x; this.y = y; this.target = target;
+            this.speed = config.bulletSpeed; this.damage = config.damage; 
+            this.color = config.projectileColor; this.effect = config.effect; this.isParagon = config.isParagon;
+            this.dead = false;
+        }
+        update() {
+            if (!enemies.includes(this.target)) { this.dead = true; return; }
+            const dx = this.target.x - this.x, dy = this.target.y - this.y, dist = Math.hypot(dx, dy);
+            if (dist < this.speed) {
+                if (this.target.isStealthed) this.target.isStealthed = false;
+                let finalDamage = this.damage;
+                
+                // Reinforced Ninja Special Armor Logic
+                if (this.target.type === 'reinforced_ninja') {
+                    // Only Fire (burn) and Bomb (explosive) and HERO (shock) deal normal damage
+                    if (this.effect === 'burn' || this.effect === 'explosive' || this.effect === 'shock') {
+                        createParticles(this.target.x, this.target.y, '#f97316', 5);
+                    } else {
+                        // Resistant to EVERYTHING else
+                        finalDamage = 1; // Minimal damage
+                        createParticles(this.target.x, this.target.y, '#a8a29e', 2);
+                        addFloatingText(this.target.x, this.target.y, "RESIST", "#ccc");
+                    }
+                }
+                // Standard Armored Logic
+                else if (this.target.isArmored) {
+                    if (this.effect === 'burn' || this.effect === 'explosive') { createParticles(this.target.x, this.target.y, '#f97316', 3); } 
+                    else { finalDamage = Math.floor(this.damage * 0.2); if (finalDamage < 1) finalDamage = 1; createParticles(this.target.x, this.target.y, '#a8a29e', 2); }
+                }
+                
+                this.target.health -= finalDamage;
+                if (this.effect === 'freeze') this.target.freezeTimer = 60;
+                if (this.effect === 'burn') this.target.burnTimer = 120;
+                if (this.effect === 'void') this.target.voidTimer = 60;
+                this.dead = true;
+            } else { this.x += (dx/dist)*this.speed; this.y += (dy/dist)*this.speed; }
+        }
+        draw() { 
+            ctx.fillStyle = this.effect === 'burn' ? '#f97316' : this.color; 
+            ctx.beginPath(); ctx.arc(this.x, this.y, this.isParagon ? 6 : 4, 0, Math.PI*2); ctx.fill(); 
+        }
+    }
+
+    canvas.addEventListener('mousemove', e => { const rect = canvas.getBoundingClientRect(); mouseX = e.clientX - rect.left; mouseY = e.clientY - rect.top; });
+    canvas.addEventListener('click', e => {
+        if (!gameStarted || gameOver) return;
+        if (gamePaused) return; 
+        
+        if (isMerging) {
+            const clicked = towers.find(t => Math.hypot(t.x - mouseX, t.y - mouseY) < 20);
+            if (clicked) handleMergeClick(clicked);
+            return;
+        }
+        if (selectedTowerType) {
+            const typeData = TOWER_TYPES[selectedTowerType];
+            if (selectedTowerType === 'spike' && typeData.quantity <= 0) { addFloatingText(mouseX, mouseY, "Out of Stock!", "red"); selectedTowerType = null; updateUI(); return; }
+            if (money >= typeData.cost) {
+                if (isValidPlacement(mouseX, mouseY)) {
+                    towers.push(new Tower(mouseX, mouseY, selectedTowerType));
+                    money -= typeData.cost; 
+                    if (selectedTowerType === 'spike') { typeData.quantity--; generateTowerButtons(); if (typeData.quantity <= 0) selectedTowerType = null; }
+                    if (selectedTowerType !== 'spike') selectedTowerType = null;
+                    updateUI();
+                } else { addFloatingText(mouseX, mouseY, "Invalid!", "red"); }
+            } else { addFloatingText(mouseX, mouseY, "No Cash!", "red"); }
+            return;
+        }
+        const clicked = towers.find(t => Math.hypot(t.x - mouseX, t.y - mouseY) < 20);
+        if (clicked) showUpgradePanel(clicked); else closeUpgradePanel();
+    });
+
+    function selectTower(type) { if (selectedTower) closeUpgradePanel(); selectedTowerType = type; }
+    function updateUI() {
+        document.getElementById('livesDisplay').innerText = lives;
+        document.getElementById('moneyDisplay').innerText = money;
+        document.getElementById('waveDisplay').innerText = wave;
+        for (const [type, data] of Object.entries(TOWER_TYPES)) {
+            const btn = document.getElementById(`btn-${type}`);
+            if (btn) {
+                // Special checks
+                if (data.isHero && towers.some(t => t.config.isHero)) {
+                     btn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else if (money < data.cost) {
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        }
+        if (selectedTower) updateUpgradePanel();
+    }
+
+    function triggerEvent(title, subtitle = "Prepare your defenses!") {
+        const banner = document.getElementById('eventBanner');
+        const titleEl = document.getElementById('eventTitle');
+        const subEl = document.getElementById('eventSub');
+        
+        titleEl.innerText = title;
+        subEl.innerText = subtitle;
+        
+        banner.classList.remove('hidden');
+        banner.classList.remove('event-banner'); // Reset animation
+        void banner.offsetWidth; // Trigger reflow
+        banner.classList.add('event-banner');
+    }
+
+    function update() {
+        if (!gameStarted || gameOver || gamePaused) return;
+        frameCount++;
+        for(let i=0; i<gameSpeed; i++) {
+            if (waveActive) {
+                if(spawnQueue.length > 0) {
+                    spawnTimer++;
+                    if(spawnTimer > 40) { enemies.push(new Enemy(spawnQueue.shift(), wave)); spawnTimer = 0; }
+                } else if (enemies.length === 0) { endWave(); }
+            }
+            for(let j=enemies.length-1; j>=0; j--) {
+                const e = enemies[j];
+                if (e.update()) { enemies.splice(j, 1); }
+                else if (e.health <= 0) {
+                    // Coin Drop Logic
+                    const bounty = e.bounty;
+                    const coinCount = Math.min(5, Math.ceil(bounty / 5)); // Max 5 visual coins
+                    const valPerCoin = bounty / coinCount;
+                    for(let k=0; k<coinCount; k++) {
+                        coins.push(new Coin(e.x, e.y, valPerCoin));
+                    }
+
+                    if(e.type === 'mech-rider') { 
+                        const k = new Enemy('knight', wave); k.x = e.x; k.y = e.y; k.waypointIndex = e.waypointIndex; k.pathIndex = e.pathIndex; k.path = e.path; enemies.push(k); 
+                    }
+                    
+                    // Release any blocker
+                    if (e.blockedBy) { e.blockedBy.target = null; e.blockedBy.state = 'idle'; e.blockedBy = null; }
+
+                    enemies.splice(j, 1); updateUI();
+                }
+            }
+            towers.forEach(t => t.update());
+            // Safe reverse loop for removals
+            for(let j=projectiles.length-1; j>=0; j--) {
+                 projectiles[j].update();
+                 if(projectiles[j].dead) projectiles.splice(j, 1);
+            }
+            for(let j=particles.length-1; j>=0; j--) {
+                 particles[j].update();
+                 if(particles[j].life <= 0) particles.splice(j, 1);
+            }
+            for(let j=floatingTexts.length-1; j>=0; j--) {
+                 floatingTexts[j].update();
+                 if(floatingTexts[j].life <= 0) floatingTexts.splice(j, 1);
+            }
+            for(let j=coins.length-1; j>=0; j--) {
+                 if(coins[j].update()) coins.splice(j, 1);
+            }
+            for(let j=soldiers.length-1; j>=0; j--) {
+                if(soldiers[j].update()) {
+                    const s = soldiers[j];
+                    const tower = s.tower;
+                    if(tower) {
+                         const idx = tower.soldiers.indexOf(s);
+                         if (idx > -1) tower.soldiers.splice(idx, 1);
+                    }
+                    soldiers.splice(j, 1);
+                }
+            }
+        }
+    }
+
+    function draw() {
+        ctx.fillStyle = currentMapData.bgColor; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw Water Zones
+        if (currentMapData.waterZones.length > 0 || currentMapData.isGlassFloor) {
+            ctx.fillStyle = currentMapData.isGlassFloor ? '#0891b2' : '#3b82f6';
+            if (currentMapData.sceneryType === 'magic') ctx.fillStyle = '#0f172a';
+            if (currentMapData.sceneryType === 'castle' && !currentMapData.isGraveyard) ctx.fillStyle = '#7f1d1d'; 
+            if (currentMapData.sceneryType === 'volcano') ctx.fillStyle = '#991b1b'; // Lava
+            if (currentMapData.sceneryType === 'bridge') ctx.fillStyle = '#1e3a8a'; // Deep water
+            
+            for (let zone of currentMapData.waterZones) {
+                ctx.beginPath();
+                ctx.moveTo(zone[0].x * canvas.width, zone[0].y * canvas.height);
+                for (let i=1; i<zone.length; i++) ctx.lineTo(zone[i].x * canvas.width, zone[i].y * canvas.height);
+                ctx.closePath(); ctx.fill();
+                if (currentMapData.sceneryType === 'magic') { ctx.strokeStyle = '#334155'; ctx.lineWidth = 4; ctx.stroke(); }
+                if (currentMapData.sceneryType === 'volcano') { ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 20; ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 2; ctx.stroke(); ctx.shadowBlur = 0; }
+            }
+        }
+
+        // Draw Cursed Void
+        if (currentMapData.isCursed) {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(canvas.width * 0.4, 0, canvas.width * 0.2, canvas.height);
+            // Portal 1
+            ctx.fillStyle = '#8b5cf6'; ctx.beginPath(); ctx.arc(canvas.width * 0.4, canvas.height * 0.5, 30, 0, Math.PI*2); ctx.fill();
+             ctx.strokeStyle = '#fff'; ctx.beginPath(); ctx.arc(canvas.width * 0.4, canvas.height * 0.5, 25, 0, Math.PI*2); ctx.stroke();
+            // Portal 2
+            ctx.fillStyle = '#8b5cf6'; ctx.beginPath(); ctx.arc(canvas.width * 0.6, canvas.height * 0.5, 30, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#fff'; ctx.beginPath(); ctx.arc(canvas.width * 0.6, canvas.height * 0.5, 25, 0, Math.PI*2); ctx.stroke();
+        }
+        
+        if (pathWaypoints.length > 0) {
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            // Base path stroke
+            for(let path of pathWaypoints) {
+                ctx.beginPath(); ctx.moveTo(path[0].x, path[0].y); for(let i=1; i<path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+                if(currentMapData.sceneryType === 'ocean' || currentMapData.isGlassFloor) { ctx.strokeStyle = '#0891b2'; ctx.lineWidth = 48; ctx.stroke(); } 
+                else if(currentMapData.sceneryType === 'magic') { ctx.shadowBlur = 0; ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 56; ctx.stroke(); } 
+                else if(currentMapData.sceneryType === 'castle') { ctx.strokeStyle = '#292524'; ctx.lineWidth = 56; ctx.stroke(); } 
+                else if(currentMapData.sceneryType === 'circles') { ctx.strokeStyle = '#4d7c0f'; ctx.lineWidth = 50; ctx.stroke(); } 
+                else if(currentMapData.sceneryType === 'city') { ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 50; ctx.stroke(); } 
+                else if(currentMapData.sceneryType === 'bridge') { ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 50; ctx.stroke(); } 
+                else if(currentMapData.sceneryType === 'volcano') { ctx.strokeStyle = '#450a0a'; ctx.lineWidth = 50; ctx.stroke(); } 
+                else if(currentMapData.sceneryType === 'rainbow') { ctx.strokeStyle = '#fbcfe8'; ctx.lineWidth = 50; ctx.stroke(); } 
+                else if(currentMapData.sceneryType === 'paradise') { ctx.strokeStyle = '#f0f9ff'; ctx.lineWidth = 50; ctx.stroke(); }
+                else { ctx.strokeStyle = '#5d4037'; ctx.lineWidth = 48; ctx.stroke(); }
+            }
+            // Inner path stroke
+            for(let path of pathWaypoints) {
+                ctx.beginPath(); ctx.moveTo(path[0].x, path[0].y); for(let i=1; i<path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+                if(currentMapData.sceneryType === 'ocean' || currentMapData.isGlassFloor) { ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 40; ctx.stroke(); } 
+                else if(currentMapData.sceneryType === 'magic') { ctx.strokeStyle = '#334155'; ctx.lineWidth = 48; ctx.stroke(); } 
+                else if(currentMapData.sceneryType === 'castle') { ctx.strokeStyle = '#57534e'; ctx.lineWidth = 48; ctx.stroke(); } 
+                else if(currentMapData.sceneryType === 'circles') { ctx.strokeStyle = '#bef264'; ctx.lineWidth = 40; ctx.stroke(); } 
+                else if(currentMapData.sceneryType === 'city') { ctx.strokeStyle = '#475569'; ctx.lineWidth = 40; ctx.stroke(); } 
+                else if(currentMapData.sceneryType === 'bridge') { ctx.strokeStyle = '#b91c1c'; ctx.lineWidth = 40; ctx.stroke(); } 
+                else if(currentMapData.sceneryType === 'volcano') { ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 40; ctx.stroke(); } 
+                else if(currentMapData.sceneryType === 'rainbow') { 
+                    const grad = ctx.createLinearGradient(0,0, canvas.width, canvas.height);
+                    grad.addColorStop(0, '#fca5a5'); grad.addColorStop(0.2, '#fdba74'); grad.addColorStop(0.4, '#fde047');
+                    grad.addColorStop(0.6, '#86efac'); grad.addColorStop(0.8, '#67e8f9'); grad.addColorStop(1, '#c4b5fd');
+                    ctx.strokeStyle = grad; ctx.lineWidth = 40; ctx.stroke(); 
+                } 
+                else if(currentMapData.sceneryType === 'paradise') { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 40; ctx.stroke(); }
+                else { ctx.strokeStyle = '#d7ccc8'; ctx.lineWidth = 40; ctx.stroke(); }
+            }
+            // Dashed lines / details
+            for(let path of pathWaypoints) {
+                ctx.beginPath(); ctx.moveTo(path[0].x, path[0].y); for(let i=1; i<path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+                if(currentMapData.sceneryType === 'magic') { ctx.strokeStyle = '#475569'; ctx.lineWidth = 40; ctx.setLineDash([20,20]); ctx.stroke(); ctx.setLineDash([]); } 
+                else if(currentMapData.sceneryType === 'castle') { ctx.strokeStyle = '#44403c'; ctx.lineWidth = 44; ctx.setLineDash([10,10]); ctx.stroke(); ctx.setLineDash([]); } 
+                else if(currentMapData.sceneryType === 'city') { ctx.strokeStyle = '#facc15'; ctx.lineWidth = 4; ctx.setLineDash([20,20]); ctx.stroke(); ctx.setLineDash([]); } 
+                else if(currentMapData.sceneryType === 'bridge') { ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 44; ctx.setLineDash([5,5]); ctx.stroke(); ctx.setLineDash([]); } 
+                else if(currentMapData.sceneryType !== 'ocean' && currentMapData.sceneryType !== 'circles' && currentMapData.sceneryType !== 'rainbow' && currentMapData.sceneryType !== 'paradise' && !currentMapData.isGlassFloor) { ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 35; ctx.setLineDash([5,15]); ctx.stroke(); ctx.setLineDash([]); }
+            }
+            // Start/End Points
+            for(let path of pathWaypoints) {
+                const start = path[0]; const end = path[path.length-1];
+                if(currentMapData.sceneryType === 'magic') { ctx.fillStyle = '#4c1d95'; } else { ctx.fillStyle = '#1f2937'; }
+                ctx.beginPath(); ctx.arc(start.x, start.y, 25, 0, Math.PI*2); ctx.fill();
+                if(currentMapData.sceneryType === 'ocean') { ctx.fillStyle = '#64748b'; ctx.beginPath(); ctx.arc(end.x, end.y, 30, 0, Math.PI*2); ctx.fill(); }
+                else if (currentMapData.sceneryType === 'magic') { ctx.fillStyle = '#0f172a'; ctx.beginPath(); ctx.arc(end.x, end.y, 30, 0, Math.PI*2); ctx.fill(); } 
+                else if (currentMapData.sceneryType === 'castle' || currentMapData.sceneryType === 'volcano') { ctx.fillStyle = '#7f1d1d'; ctx.beginPath(); ctx.arc(end.x, end.y, 30, 0, Math.PI*2); ctx.fill(); }
+                else { ctx.fillStyle = '#e5e7eb'; ctx.beginPath(); ctx.arc(end.x, end.y, 25, 0, Math.PI*2); ctx.fill(); }
+                if (currentMapData.sceneryType === 'magic') { ctx.fillStyle = '#22c55e'; ctx.beginPath(); ctx.ellipse(end.x, end.y, 10, 20, 0, 0, Math.PI*2); ctx.fill(); } 
+                else { ctx.fillStyle = '#3b82f6'; if (currentMapData.sceneryType !== 'magic') { ctx.beginPath(); ctx.arc(end.x, end.y, 10, 0, Math.PI*2); ctx.fill(); } }
+            }
+             // Stump Special
+            if (currentMapData.specialFeature && currentMapData.specialFeature.type === 'stump') {
+                const sx = currentMapData.specialFeature.x * canvas.width; const sy = currentMapData.specialFeature.y * canvas.height; const sr = currentMapData.specialFeature.radius;
+                ctx.save(); ctx.shadowBlur = 10; ctx.shadowColor = '#000'; ctx.fillStyle = '#5d4037'; ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = '#8d6e63'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(sx, sy, sr*0.8, 0, Math.PI*2); ctx.stroke();
+                ctx.restore();
+            }
+        }
+        
+        scenery.forEach(s => {
+            ctx.save(); ctx.translate(s.x, s.y); ctx.scale(s.scale, s.scale);
+            if(s.type === 'tree') { ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(0, 10, 15, 5, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#5d4037'; ctx.fillRect(-4, -10, 8, 20); ctx.fillStyle = '#1b5e20'; ctx.beginPath(); ctx.arc(0, -20, 20, 0, Math.PI*2); ctx.fill(); } 
+            else if(s.type === 'pink_tree') { ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(0, 10, 15, 5, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#2e1065'; ctx.fillRect(-4, -10, 8, 20); ctx.fillStyle = '#db2777'; ctx.beginPath(); ctx.arc(0, -20, 22, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#f472b6'; ctx.beginPath(); ctx.arc(-8, -25, 10, 0, Math.PI*2); ctx.fill(); } 
+            else if(s.type === 'flower_bed') { ctx.fillStyle = 'rgba(0,0,0,0.1)'; ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#f472b6'; ctx.beginPath(); ctx.arc(-5, -5, 4, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#fbbf24'; ctx.beginPath(); ctx.arc(5, -5, 4, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(0, 5, 4, 0, Math.PI*2); ctx.fill(); } 
+            else if(s.type === 'ruin_stone') { ctx.fillStyle = '#334155'; ctx.fillRect(-10, -10, 20, 20); ctx.fillStyle = '#475569'; ctx.fillRect(-8, -12, 16, 20); ctx.fillStyle = '#15803d'; ctx.beginPath(); ctx.arc(-5, -8, 4, 0, Math.PI*2); ctx.fill(); } 
+            else if(s.type === 'bridge_post') { ctx.fillStyle = '#7f1d1d'; ctx.fillRect(-6, -6, 12, 12); ctx.fillStyle = '#991b1b'; ctx.fillRect(-4, -4, 8, 8); }
+            else if(s.type === 'building') { ctx.fillStyle = '#0f172a'; ctx.fillRect(-15, -30, 30, 60); ctx.fillStyle = '#facc15'; ctx.fillRect(-5, -20, 10, 10); ctx.fillRect(-5, 0, 10, 10); ctx.fillRect(-5, 20, 10, 10); }
+            else if(s.type === 'street_lamp') { ctx.fillStyle = '#475569'; ctx.fillRect(-2, -20, 4, 40); ctx.fillStyle = '#fbbf24'; ctx.beginPath(); ctx.arc(0, -20, 5, 0, Math.PI*2); ctx.fill(); ctx.shadowColor='#fbbf24'; ctx.shadowBlur=10; ctx.stroke(); ctx.shadowBlur=0; }
+            else if(s.type === 'magma_rock') { ctx.fillStyle = '#450a0a'; ctx.beginPath(); ctx.moveTo(-10, 10); ctx.lineTo(0, -10); ctx.lineTo(15, 10); ctx.fill(); ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(5, 5); ctx.lineTo(-2, 0); ctx.fill(); }
+            else if(s.type === 'cloud') { ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.beginPath(); ctx.arc(0,0,15,0,Math.PI*2); ctx.arc(15,0,20,0,Math.PI*2); ctx.arc(30,0,15,0,Math.PI*2); ctx.fill(); }
+            else if(s.type === 'honey_drop') { ctx.fillStyle = '#f59e0b'; ctx.beginPath(); ctx.moveTo(0,-10); ctx.quadraticCurveTo(10,0,0,10); ctx.quadraticCurveTo(-10,0,0,-10); ctx.fill(); }
+            else if(s.type === 'star') { ctx.fillStyle = '#fde047'; ctx.beginPath(); ctx.moveTo(0,-10); ctx.lineTo(2,-2); ctx.lineTo(10,0); ctx.lineTo(2,2); ctx.lineTo(0,10); ctx.lineTo(-2,2); ctx.lineTo(-10,0); ctx.lineTo(-2,-2); ctx.fill(); }
+            else if(s.type === 'glow_orb') { ctx.shadowColor = '#fff'; ctx.shadowBlur = 15; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0,0,5,0,Math.PI*2); ctx.fill(); ctx.shadowBlur = 0; }
+            else if(s.type === 'torch') { ctx.fillStyle = '#292524'; ctx.fillRect(-2, 0, 4, 15); ctx.fillStyle = '#44403c'; ctx.beginPath(); ctx.moveTo(-5, 0); ctx.lineTo(5, 0); ctx.lineTo(0, 5); ctx.fill(); let flicker = Math.random() * 2; ctx.fillStyle = '#f97316'; ctx.beginPath(); ctx.arc(0, -5, 4 + flicker, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#fef08a'; ctx.beginPath(); ctx.arc(0, -5, 2, 0, Math.PI*2); ctx.fill(); } 
+            else if(s.type === 'firefly') { let xOff = Math.sin(frameCount * 0.02 + s.y) * 10; let yOff = Math.cos(frameCount * 0.03 + s.x) * 10; ctx.shadowBlur = 10; ctx.shadowColor = '#facc15'; ctx.fillStyle = '#fef08a'; ctx.beginPath(); ctx.arc(xOff, yOff - 15, 3, 0, Math.PI*2); ctx.fill(); } 
+            else if(s.type === 'mushroom' || s.type === 'magic_shroom') { ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(0, 5, 8, 3, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#fff'; ctx.fillRect(-3, -5, 6, 10); if(s.type === 'magic_shroom') ctx.fillStyle = Math.random()>0.5 ? '#a855f7' : '#3b82f6'; else ctx.fillStyle = '#d32f2f'; ctx.beginPath(); ctx.arc(0, -5, 10, Math.PI, 0); ctx.fill(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(-4, -8, 2, 0, Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(4, -7, 2, 0, Math.PI*2); ctx.fill(); } 
+            else if(s.type === 'crystal') { ctx.shadowBlur = 10; ctx.shadowColor = '#22d3ee'; ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(0, 10, 10, 4, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#22d3ee'; ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(8, 0); ctx.lineTo(0, 10); ctx.lineTo(-8, 0); ctx.fill(); ctx.fillStyle = '#cffafe'; ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(4, 0); ctx.lineTo(0, 10); ctx.fill(); } 
+            else if(s.type === 'palm') { ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(0, 10, 15, 5, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#8d6e63'; ctx.fillRect(-3, -10, 6, 30); ctx.fillStyle = '#43a047'; for(let i=0; i<5; i++) { ctx.beginPath(); ctx.ellipse(0, -15, 25, 5, i, 0, Math.PI*2); ctx.fill(); } } 
+            else if(s.type === 'rock') { ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.beginPath(); ctx.ellipse(0, 10, 12, 5, 0, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#64748b'; ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#94a3b8'; ctx.beginPath(); ctx.arc(-3, -3, 5, 0, Math.PI*2); ctx.fill(); } 
+            else if (s.type === 'bubble') { let yOff = Math.sin(frameCount * 0.05 + s.x) * 5; ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.beginPath(); ctx.arc(0, yOff, 4, 0, Math.PI*2); ctx.fill(); }
+            ctx.restore();
+        });
+
+        // Covered Garden Glass Visuals
+        if (currentMapData.isCovered) {
+             const halfW = canvas.width/2; const halfH = canvas.height/2;
+             const quadrants = [
+                 {x:0, y:halfH, w:halfW, h:halfH}, // 0
+                 {x:0, y:0, w:halfW, h:halfH}, // 1
+                 {x:halfW, y:0, w:halfW, h:halfH}, // 2
+                 {x:halfW, y:halfH, w:halfW, h:halfH} // 3
+             ];
+             ctx.fillStyle = 'rgba(255, 255, 255, 0.15)'; ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; ctx.lineWidth = 2;
+             quadrants.forEach((q, idx) => {
+                 if (idx !== coveredGardenQuadrant) {
+                     ctx.fillRect(q.x, q.y, q.w, q.h); ctx.strokeRect(q.x, q.y, q.w, q.h);
+                     ctx.beginPath(); ctx.moveTo(q.x + 10, q.y + q.h - 10); ctx.lineTo(q.x + 30, q.y + q.h - 50); ctx.stroke();
+                 }
+             });
+        }
+        
+        // Graveyard Visual Overlay
+        if (currentMapData.isGraveyard) {
+             ctx.fillStyle = 'rgba(255, 0, 0, 0.05)';
+             ctx.fillRect(0,0, canvas.width, canvas.height);
+        }
+
+        towers.forEach(t => t.draw()); 
+        soldiers.forEach(s => s.draw()); // Draw Soldiers
+        enemies.forEach(e => e.draw()); 
+        projectiles.forEach(p => p.draw());
+        coins.forEach(c => c.draw()); // Draw Coins
+        particles.forEach(p => p.draw()); 
+        floatingTexts.forEach(t => t.draw());
+        
+        if (selectedTowerType && !gameOver) {
+            const config = TOWER_TYPES[selectedTowerType];
+            const valid = isValidPlacement(mouseX, mouseY);
+            ctx.beginPath(); ctx.arc(mouseX, mouseY, config.range, 0, Math.PI*2);
+            ctx.fillStyle = valid ? 'rgba(255,255,255,0.1)' : 'rgba(255,0,0,0.1)'; ctx.fill();
+            ctx.strokeStyle = valid ? 'rgba(255,255,255,0.3)' : 'rgba(255,0,0,0.3)'; ctx.stroke();
+        }
+    }
+
+    function pointToSegmentDistance(px, py, x1, y1, x2, y2) {
+        const l2 = (x1-x2)**2 + (y1-y2)**2; if(l2===0) return Math.hypot(px-x1, py-y1);
+        let t = ((px-x1)*(x2-x1) + (py-y1)*(y2-y1))/l2; t = Math.max(0, Math.min(1, t));
+        return Math.hypot(px-(x1+t*(x2-x1)), py-(y1+t*(y2-y1)));
+    }
+    function createParticles(x,y,c,n){ for(let i=0; i<n; i++) particles.push({x,y,vx:(Math.random()-0.5)*2, vy:(Math.random()-0.5)*2, color:c, life:1, update:function(){this.x+=this.vx;this.y+=this.vy;this.life-=0.02}, draw:function(){ctx.globalAlpha=this.life;ctx.fillStyle=this.color;ctx.fillRect(this.x,this.y,3,3);ctx.globalAlpha=1} }); }
+    function addFloatingText(x,y,t,c){ floatingTexts.push({x,y,text:t,color:c,life:1,update:function(){this.y-=1;this.life-=0.02}, draw:function(){ctx.globalAlpha=this.life;ctx.fillStyle=this.color;ctx.font='bold 14px Arial';ctx.fillText(this.text,this.x,this.y);ctx.globalAlpha=1} }); }
+    function takeDamage(amount) { 
+        if (!gameStarted) return; 
+        lives -= amount; 
+        updateUI(); 
+        if (lives <= 0) { 
+            gameOver = true; 
+            saveGame(); // Save on Game Over
+            document.getElementById('modal').classList.remove('hidden'); 
+            document.getElementById('modalTitle').innerText = "GAME OVER"; 
+        } 
+    }
+    
+    document.getElementById('waveControlBtn').addEventListener('click', function() { if (!waveActive) startWave(); else toggleSpeed(); });
+    function toggleSpeed() { gameSpeed = gameSpeed === 1 ? 3 : 1; updateSpeedBtn(); }
+    function updateSpeedBtn() { const btn = document.getElementById('waveControlBtn'); if(gameSpeed === 3) { btn.innerText = ">>> 3x"; btn.className = "bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 px-6 rounded-lg border border-orange-400 min-w-[140px]"; } else { btn.innerText = ">> 1x"; btn.className = "bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg border border-blue-400 min-w-[140px]"; } }
+    
+    function startWave() { 
+        waveActive = true; 
+        spawnQueue = []; 
+        gameSpeed = 1; 
+        updateSpeedBtn(); 
+        const count = 5 + Math.floor(wave * 2); 
+        
+        // Boss Logic with Events
+        if (wave % 100 === 0) { 
+            spawnQueue.push('emperor'); 
+            triggerEvent("EMPEROR ARRIVES", "The Ultimate Threat");
+        }
+        else if (wave % 50 === 0) { 
+            spawnQueue.push('king'); 
+            triggerEvent("KING BOSS", "Heavy Armor Detected");
+        }
+        else if (wave % 10 === 0) { 
+            spawnQueue.push('prince'); 
+            triggerEvent("PRINCE BOSS", "Mini-Boss Approaching");
+        }
+        
+        // Sneak Spawn Logic (Every 5 waves)
+        if (wave % 5 === 0) {
+            const sneakCount = Math.ceil(wave / 10); 
+            for(let k=0; k<sneakCount; k++) spawnQueue.push('sneak');
+        }
+        
+        for(let i=0; i<count; i++) { 
+            let r = Math.random(); 
+            
+            // EXTENDED SPAWN LOGIC (New Enemies)
+            if (wave > 60) {
+                if (r < 0.05) spawnQueue.push('tank');
+                else if (r < 0.1) spawnQueue.push('dark_knight');
+                else if (r < 0.2) spawnQueue.push('cyborg');
+                else if (r < 0.3) spawnQueue.push('magma_golem');
+                else spawnQueue.push('yeti');
+            }
+            else if (wave > 40) {
+                if (r < 0.1) spawnQueue.push('slime');
+                else if (r < 0.2) spawnQueue.push('shade');
+                else if (r < 0.3) spawnQueue.push('sorcerer');
+                else if (r < 0.4) spawnQueue.push('gargoyle');
+                else spawnQueue.push('ent');
+            }
+            else if (wave > 25) {
+                if (r < 0.1) spawnQueue.push('troll');
+                else if (r < 0.2) spawnQueue.push('drone');
+                else if (r < 0.3) spawnQueue.push('samurai');
+                else if (r < 0.4) spawnQueue.push('viking');
+                else spawnQueue.push('ghost');
+            }
+            else if (wave > 10) {
+                if (r < 0.1) spawnQueue.push('bandit');
+                else if (r < 0.2) spawnQueue.push('orc');
+                else if (r < 0.3) spawnQueue.push('wizard'); 
+                else if (r < 0.4) spawnQueue.push('reinforced_mech'); 
+                else spawnQueue.push('knight'); 
+            }
+            else {
+                // Early Game
+                if (r < 0.1) spawnQueue.push('bat');
+                else if (r < 0.2) spawnQueue.push('skeleton');
+                else if (r < 0.3) spawnQueue.push('goblin');
+                else if (r < 0.5) spawnQueue.push('basic');
+                else spawnQueue.push('guard');
+            }
+        } 
+        spawnQueue.sort(() => Math.random() - 0.5); 
+    }
+
+    function endWave() { 
+        waveActive = false; 
+        
+        // Earn Gold per wave (Persistent Currency)
+        const earnedGold = 50 + (wave * 10);
+        metaMoney += earnedGold;
+        addFloatingText(canvas.width/2, canvas.height/2 - 50, `+${earnedGold} GOLD`, "#fbbf24");
+        
+        wave++; 
+        money += 20; // Reduced per round bonus
+        
+        // Covered Garden Logic
+        if (currentMapData.isCovered) {
+             coveredGardenQuadrant = (coveredGardenQuadrant + 1) % 4;
+             addFloatingText(canvas.width/2, canvas.height/2, "GLASS SHIFTED!", "#fff");
+        }
+
+        // Glass Layer Logic
+        if (currentMapData.isGlassFloor && wave > 10) {
+            for (let i = towers.length - 1; i >= 0; i--) {
+                const t = towers[i];
+                if (t.level < 5 && Math.random() < 0.5 && !t.isParagon) {
+                    createParticles(t.x, t.y, '#22d3ee', 10);
+                    addFloatingText(t.x, t.y, "CRACKED!", "#ef4444");
+                    towers.splice(i, 1);
+                }
+            }
+        }
+        
+        saveGame(); // Save progress after wave
+        updateUI(); 
+        document.getElementById('waveControlBtn').innerText = "Start Wave"; 
+        document.getElementById('waveControlBtn').className = "bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-lg border border-green-400 min-w-[140px]"; 
+    }
+    
+    function triggerEvent(title, subtitle = "Prepare your defenses!") {
+        const banner = document.getElementById('eventBanner');
+        const titleEl = document.getElementById('eventTitle');
+        const subEl = document.getElementById('eventSub');
+        
+        titleEl.innerText = title;
+        subEl.innerText = subtitle;
+        
+        banner.classList.remove('hidden');
+        banner.classList.remove('event-banner'); // Reset animation
+        void banner.offsetWidth; // Trigger reflow
+        banner.classList.add('event-banner');
+    }
+    
+    function showUpgradePanel(t) { selectedTower = t; document.getElementById('upgradePanel').classList.remove('hidden'); updateUpgradePanel(); }
+    function closeUpgradePanel() { selectedTower = null; document.getElementById('upgradePanel').classList.add('hidden'); }
+    
+    function updateUpgradePanel() { 
+        if(!selectedTower) return; 
+        document.getElementById('upgName').innerText = selectedTower.config.name; 
+        document.getElementById('upgDmg').innerText = selectedTower.damage; 
+        document.getElementById('upgRange').innerText = selectedTower.range; 
+        document.getElementById('upgCost').innerText = '$' + selectedTower.getUpgradeCost(); 
+        document.getElementById('sellPrice').innerText = '$' + selectedTower.getSellValue(); 
+        
+        const btnUpg = document.getElementById('btnUpgrade');
+        const btnSell = document.getElementById('btnSell');
+        const warn = document.getElementById('upgradeWarning');
+        const heroWarn = document.getElementById('heroWarning');
+        
+        // Reset
+        btnUpg.disabled = false; btnUpg.classList.remove('opacity-50', 'cursor-not-allowed');
+        btnSell.disabled = false; btnSell.classList.remove('opacity-50', 'cursor-not-allowed');
+        warn.classList.add('hidden'); heroWarn.classList.add('hidden');
+
+        if (selectedTower.config.isHero) {
+             btnUpg.disabled = true; btnUpg.classList.add('opacity-50', 'cursor-not-allowed');
+             btnSell.disabled = true; btnSell.classList.add('opacity-50', 'cursor-not-allowed');
+             heroWarn.classList.remove('hidden');
+             return; // Stop further checks
+        }
+
+        if (currentMapData.isCovered && isUnderGlass(selectedTower.x, selectedTower.y)) {
+            btnUpg.disabled = true;
+            btnUpg.classList.add('opacity-50', 'cursor-not-allowed');
+            warn.classList.remove('hidden');
+        }
+
+        const same = towers.filter(t => t.type === selectedTower.type && !t.isParagon); 
+        if (same.length >= 3 && !selectedTower.isParagon) { 
+            document.getElementById('mergeRow').classList.remove('hidden'); 
+            const btn = document.getElementById('btnMerge'); 
+            if(wave >= 10) { btn.disabled = false; btn.classList.remove('opacity-50'); document.getElementById('mergeText').innerText = "Ready"; } 
+            else { btn.disabled = true; btn.classList.add('opacity-50'); document.getElementById('mergeText').innerText = "Wave 10+"; } 
+        } else { document.getElementById('mergeRow').classList.add('hidden'); } 
+    }
+    
+    function buyUpgrade() { 
+        if(selectedTower && money >= selectedTower.getUpgradeCost()) {
+             if (currentMapData.isCovered && isUnderGlass(selectedTower.x, selectedTower.y)) return;
+             money -= selectedTower.getUpgradeCost(); 
+             selectedTower.upgrade(); 
+             updateUI(); 
+        } 
+    }
+    function sellTower() { if(selectedTower) { money += selectedTower.getSellValue(); towers.splice(towers.indexOf(selectedTower), 1); closeUpgradePanel(); updateUI(); } }
+    function initiateMerge() { isMerging = true; mergeCandidates = [selectedTower]; closeUpgradePanel(); document.getElementById('mergeHud').classList.remove('hidden'); document.getElementById('mergeHud').classList.add('flex'); }
+    function cancelMerge() { isMerging = false; mergeCandidates = []; document.getElementById('mergeHud').classList.add('hidden'); }
+    function handleMergeClick(t) { if(t.type !== mergeCandidates[0].type || t.isParagon || mergeCandidates.includes(t)) return; mergeCandidates.push(t); if(mergeCandidates.length === 3) { const final = mergeCandidates[2]; mergeCandidates.slice(0,2).forEach(c => towers.splice(towers.indexOf(c), 1)); final.makeParagon(); cancelMerge(); updateUI(); } }
+
+    function loop() { update(); draw(); requestAnimationFrame(loop); }
+    loop();
+</script>
+</body>
+</html>
