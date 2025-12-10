@@ -11,6 +11,7 @@ import GameCanvasView from '../views/GameCanvasView';
 import WaveHUDView from '../views/WaveHUDView';
 import TowerPanelView from '../views/TowerPanelView';
 import UpgradePanelView from '../views/UpgradePanelView';
+import ParagonMergeView from '../views/ParagonMergeView';
 import BALANCE_DATA from '../data/balance.json';
 import { MAPS } from '../data/maps';
 import {
@@ -24,6 +25,7 @@ import {
     drawScenery
 } from '../utils/renderHelpers';
 import { isValidPlacement, generateWaveComposition, calculateDamage } from '../utils/gameLogic';
+import { createTower, createEnemy, calculateLivesDamage, updateEnemyStatusEffects, updateEnemyMovement, createSoldier, checkTrapActivation, createParagonTower, findParagonCandidates } from '../utils/entityFactories';
 import * as GameConstants from '../constants/GameConstants';
 
 export default function GameEngineContainer({
@@ -46,6 +48,8 @@ export default function GameEngineContainer({
     const [isWaveActive, setIsWaveActive] = useState(false);
     const [selectedTowerType, setSelectedTowerType] = useState(null);
     const [selectedTower, setSelectedTower] = useState(null);
+    const [paragonMode, setParagonMode] = useState(false);
+    const [selectedForParagon, setSelectedForParagon] = useState([]);
 
     const entitiesRef = useRef({
         towers: [],
@@ -77,6 +81,21 @@ export default function GameEngineContainer({
         });
 
         if (clickedTower) {
+            // Paragon mode: Select up to 3 towers
+            if (paragonMode) {
+                if (selectedForParagon.includes(clickedTower)) {
+                    setSelectedForParagon(selectedForParagon.filter(t => t !== clickedTower));
+                } else if (selectedForParagon.length < 3) {
+                    // Check if same type and level 10+
+                    if (selectedForParagon.length === 0 ||
+                        (clickedTower.type === selectedForParagon[0].type && clickedTower.level >= 10 && !clickedTower.isParagon)) {
+                        setSelectedForParagon([...selectedForParagon, clickedTower]);
+                    }
+                }
+                return;
+            }
+
+            // Normal mode: Open upgrade panel
             setSelectedTower(clickedTower);
             setSelectedTowerType(null);
             return;
@@ -102,31 +121,7 @@ export default function GameEngineContainer({
         );
 
         if (validation.valid) {
-            const newTower = {
-                x, y,
-                type: selectedTowerType,
-                config: towerConfig,
-                level: 1,
-                damage: towerConfig.damage,
-                range: towerConfig.range,
-                cooldown: 0,
-                isParagon: false,
-                totalInvestment: towerConfig.cost,
-                // Methods
-                getUpgradeCost: function () {
-                    return this.isParagon ? 999999 : Math.floor(this.config.cost * GameConstants.UPGRADE_COST_MULTIPLIER * this.level);
-                },
-                getSellValue: function () {
-                    return Math.floor(this.totalInvestment * GameConstants.SELL_VALUE_MULTIPLIER);
-                },
-                upgrade: function () {
-                    if (this.isParagon) return;
-                    this.level++;
-                    this.damage *= GameConstants.UPGRADE_DAMAGE_MULTIPLIER;
-                    this.range *= GameConstants.UPGRADE_RANGE_MULTIPLIER;
-                    this.totalInvestment += this.getUpgradeCost();
-                }
-            };
+            const newTower = createTower(x, y, selectedTowerType, towerConfig);
 
             // Handle traps (consumable)
             if (towerConfig.isTrap && shopTowers[selectedTowerType].quantity > 0) {
@@ -137,7 +132,7 @@ export default function GameEngineContainer({
             setMoney(money - towerConfig.cost);
             setSelectedTowerType(null);
         }
-    }, [selectedTowerType, shopTowers, money, mapData]);
+    }, [selectedTowerType, shopTowers, money, mapData, paragonMode, selectedForParagon]);
 
     const handleWaveControl = useCallback(() => {
         if (isWaveActive) {
@@ -149,12 +144,17 @@ export default function GameEngineContainer({
         }
     }, [isWaveActive, waveNumber]);
 
+    const handleTowerUpgradeoptimization = useMemo(() => ({
+        canAfford: selectedTower && money >= selectedTower.getUpgradeCost(),
+        cost: selectedTower?.getUpgradeCost() || 0
+    }), [selectedTower, money]);
+
     const handleTowerUpgrade = useCallback(() => {
         if (!selectedTower) return;
         const cost = selectedTower.getUpgradeCost();
         if (money >= cost && !selectedTower.isParagon) {
             selectedTower.upgrade();
-            setMoney(money - cost);
+            setMoney(prev => prev - cost);
             setSelectedTower({ ...selectedTower }); // Force re-render
         }
     }, [selectedTower, money]);
@@ -166,6 +166,25 @@ export default function GameEngineContainer({
         setMoney(money + value);
         setSelectedTower(null);
     }, [selectedTower, money]);
+
+    const handleParagonMerge = useCallback(() => {
+        if (selectedForParagon.length !== 3) return;
+
+        const [tower1, tower2, tower3] = selectedForParagon;
+        const paragonTower = createParagonTower(tower1, tower2, tower3);
+
+        // Remove original towers
+        entitiesRef.current.towers = entitiesRef.current.towers.filter(
+            t => !selectedForParagon.includes(t)
+        );
+
+        // Add paragon
+        entitiesRef.current.towers.push(paragonTower);
+
+        // Exit paragon mode
+        setParagonMode(false);
+        setSelectedForParagon([]);
+    }, [selectedForParagon]);
 
     // Game loop
     useEffect(() => {
@@ -203,87 +222,33 @@ export default function GameEngineContainer({
 
                     if (enemyData) {
                         const startPoint = mapData.paths[0][0];
-                        const baseHealth = enemyData.baseHealth * (1 + waveNumber * BALANCE_DATA.waves.healthMultiplier);
-
-                        entities.enemies.push({
-                            x: startPoint.x * canvas.width,
-                            y: startPoint.y * canvas.height,
-                            type: enemyType,
-                            health: baseHealth,
-                            maxHealth: baseHealth,
-                            speed: enemyData.baseSpeed * (difficultyData.speedMultiplier || 1),
-                            bounty: enemyData.bounty,
-                            color: enemyData.color,
-                            radius: enemyData.radius,
-                            pathIndex: 0,
-                            waypointIndex: 0,
-                            // Status effects
-                            isFrozen: false,
-                            freezeTimer: 0,
-                            isBurning: false,
-                            burnTimer: 0,
-                            burnTickTimer: 0,
-                            isVoided: false,
-                            voidTimer: 0,
-                            // Special properties
-                            isStealthed: enemyData.type === 'stealth',
-                            isArmored: enemyData.type === 'armored' || enemyType.includes('reinforced'),
-                            // Boss flag
-                            isBoss: enemyData.type === 'boss'
-                        });
+                        const enemy = createEnemy(
+                            enemyType,
+                            enemyData,
+                            waveNumber,
+                            startPoint,
+                            canvas.width,
+                            canvas.height,
+                            difficultyData.speedMultiplier || 1
+                        );
+                        entities.enemies.push(enemy);
                     }
                 }
             }
 
             // Update and draw enemies
             entities.enemies = entities.enemies.filter(enemy => {
-                // Status effect updates
-                if (enemy.isFrozen) {
-                    enemy.freezeTimer--;
-                    if (enemy.freezeTimer <= 0) enemy.isFrozen = false;
-                }
+                // Update status effects (freeze, burn, void)
+                updateEnemyStatusEffects(enemy);
 
-                if (enemy.isBurning) {
-                    enemy.burnTimer--;
-                    enemy.burnTickTimer++;
-                    if (enemy.burnTickTimer >= GameConstants.BURN_TICK_RATE) {
-                        enemy.burnTickTimer = 0;
-                        enemy.health -= GameConstants.BURN_DAMAGE;
-                    }
-                    if (enemy.burnTimer <= 0) enemy.isBurning = false;
-                }
+                // Update movement
+                const path = mapData.paths[enemy.pathIndex || 0];
+                const reachedEnd = updateEnemyMovement(enemy, path, canvas.width, canvas.height);
 
-                if (enemy.isVoided) {
-                    enemy.voidTimer--;
-                    if (enemy.voidTimer <= 0) enemy.isVoided = false;
-                }
-
-                // Movement
-                if (!enemy.isVoided) {
-                    const path = mapData.paths[enemy.pathIndex || 0];
-                    if (!path || enemy.waypointIndex >= path.length - 1) {
-                        const livesDamage = enemy.isBoss ? (enemy.type === 'emperor' ? GameConstants.EMPEROR_LIVES_DAMAGE : enemy.type === 'king' ? GameConstants.KING_LIVES_DAMAGE : GameConstants.BOSS_LIVES_DAMAGE) : GameConstants.BASIC_LIVES_DAMAGE;
-                        setLives(prev => prev - livesDamage);
-                        return false;
-                    }
-
-                    const current = path[enemy.waypointIndex];
-                    const next = path[enemy.waypointIndex + 1];
-                    const targetX = next.x * canvas.width;
-                    const targetY = next.y * canvas.height;
-
-                    const dx = targetX - enemy.x;
-                    const dy = targetY - enemy.y;
-                    const dist = Math.hypot(dx, dy);
-
-                    const effectiveSpeed = enemy.isFrozen ? enemy.speed * GameConstants.FREEZE_SLOW_MULTIPLIER : enemy.speed;
-
-                    if (dist < effectiveSpeed) {
-                        enemy.waypointIndex++;
-                    } else {
-                        enemy.x += (dx / dist) * effectiveSpeed;
-                        enemy.y += (dy / dist) * effectiveSpeed;
-                    }
+                if (reachedEnd) {
+                    const livesDamage = calculateLivesDamage(enemy);
+                    setLives(prev => prev - livesDamage);
+                    return false;
                 }
 
                 // Check if dead
@@ -307,8 +272,41 @@ export default function GameEngineContainer({
                     }
                 }
 
-                // Find target
-                if (tower.cooldown === 0 && !tower.config.isTrap && tower.config.effect !== 'income') {
+                // Barracks: Spawn soldiers
+                if (tower.config.effect === 'barracks') {
+                    const maxSoldiers = 3;
+                    const currentSoldiers = entities.soldiers.filter(s => s.barracksId === tower.x + '_' + tower.y).length;
+
+                    if (currentSoldiers < maxSoldiers && tower.cooldown === 0) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const dist = 30;
+                        entities.soldiers.push({
+                            ...createSoldier(
+                                tower.x + Math.cos(angle) * dist,
+                                tower.y + Math.sin(angle) * dist,
+                                tower.level
+                            ),
+                            barracksId: tower.x + '_' + tower.y
+                        });
+                        tower.cooldown = 180; // 3 seconds
+                    }
+                }
+
+                // Check for trap activation
+                if (tower.config.isTrap && !tower.used) {
+                    const activatedEnemy = checkTrapActivation(tower, entities.enemies);
+                    if (activatedEnemy) {
+                        activatedEnemy.health -= tower.damage;
+                        tower.used = true;
+                        // Mark for removal
+                        setTimeout(() => {
+                            entitiesRef.current.towers = entitiesRef.current.towers.filter(t => t !== tower);
+                        }, 100);
+                    }
+                }
+
+                // Find target (non-trap, non-income, non-barracks)
+                if (tower.cooldown === 0 && !tower.config.isTrap && tower.config.effect !== 'income' && tower.config.effect !== 'barracks') {
                     const target = entities.enemies.find(enemy => {
                         // Camo detection
                         if (enemy.isStealthed && !tower.config.camoDetection) return false;
@@ -335,6 +333,49 @@ export default function GameEngineContainer({
                 }
 
                 drawTower(ctx, tower);
+            });
+
+            // Update and draw soldiers
+            entities.soldiers = entities.soldiers.filter(soldier => {
+                // Regeneration
+                soldier.regenTimer++;
+                if (soldier.regenTimer >= 60) { // Every second
+                    soldier.regenTimer = 0;
+                    soldier.health = Math.min(soldier.maxHealth, soldier.health + soldier.regenRate);
+                }
+
+                // Find enemy to attack
+                soldier.cooldown = Math.max(0, soldier.cooldown - 1);
+                if (soldier.cooldown === 0) {
+                    const target = entities.enemies.find(enemy => {
+                        const dist = Math.hypot(enemy.x - soldier.x, enemy.y - soldier.y);
+                        return dist <= soldier.range;
+                    });
+
+                    if (target) {
+                        target.health -= soldier.damage;
+                        soldier.cooldown = soldier.attackCooldown;
+                    }
+                }
+
+                // Check if dead
+                if (soldier.health <= 0) return false;
+
+                // Draw soldier
+                ctx.fillStyle = soldier.color;
+                ctx.beginPath();
+                ctx.arc(soldier.x, soldier.y, soldier.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Health bar
+                const barWidth = 30;
+                const healthPercent = soldier.health / soldier.maxHealth;
+                ctx.fillStyle = '#000';
+                ctx.fillRect(soldier.x - barWidth / 2, soldier.y - 25, barWidth, 4);
+                ctx.fillStyle = '#4ade80';
+                ctx.fillRect(soldier.x - barWidth / 2, soldier.y - 25, barWidth * healthPercent, 4);
+
+                return true;
             });
 
             // Update and draw projectiles
@@ -453,7 +494,23 @@ export default function GameEngineContainer({
                 onSell={handleTowerSell}
                 onClose={() => setSelectedTower(null)}
                 canAffordUpgrade={selectedTower ? money >= selectedTower.getUpgradeCost() : false}
+                onParagonMode={() => {
+                    setParagonMode(true);
+                    setSelectedTower(null);
+                    setSelectedForParagon([]);
+                }}
             />
+
+            {paragonMode && (
+                <ParagonMergeView
+                    selectedTowers={selectedForParagon}
+                    onMerge={handleParagonMerge}
+                    onCancel={() => {
+                        setParagonMode(false);
+                        setSelectedForParagon([]);
+                    }}
+                />
+            )}
         </div>
     );
 }
