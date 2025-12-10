@@ -1,7 +1,7 @@
 # Component Glossary
 
-**Last Updated:** 2025-12-10  
-**Total Components:** 11
+**Last Updated:** 2025-12-11  
+**Total Components:** 12
 
 ---
 
@@ -12,6 +12,9 @@
 **Purpose:** Main menu screen with play button  
 **Key Props:**
 - `onPlayClick: Function` - Navigate to map selection
+- `onShopClick: Function` - Navigate to shop
+- `onSkinsClick: Function` - Navigate to skin shop
+- `onGuideClick: Function` - Navigate to compendium
 
 ### MapSelectionView
 **Path:** `src/views/MapSelectionView.jsx`  
@@ -34,7 +37,13 @@
 - `items: Array` - Shop inventory
 - `metaMoney: Number` - Persistent currency
 - `ownedTowers: Array` - Unlocked towers
-- `onPurchase: Function` - Buy callback
+- `onBuyItem: Function` - Buy callback
+- `onBack: Function`
+
+### SkinShopView
+**Path:** `src/views/SkinShopView.jsx`
+**Purpose:** Browse and purchase unit skins (Placeholder)
+**Key Props:**
 - `onBack: Function`
 
 ### CompendiumView
@@ -101,6 +110,7 @@
 **Purpose:** Core game loop with ECS architecture  
 **Key Props:**
 - `mapKey: String` - Selected map ID
+- `mapData: Object` - Map configuration data (Injected by App)
 - `difficulty: String` - Difficulty level
 - `towers: Object` - Available towers from shop
 - `onMenuClick: Function`
@@ -123,5 +133,5 @@
 ### App
 **Path:** `src/App.jsx`  
 **Purpose:** Main application router and state manager  
-**Screens:** menu, maps, difficulty, shop, compendium, game  
+**Screens:** menu, maps, difficulty, shop, skins, compendium, game  
 **State:** persistent money, tower unlocks, screen navigation

@@ -1,7 +1,7 @@
 # Architecture: Dependency Graph
 
-**Last Updated:** 2025-12-10  
-**Build Tool:** Vite 7.2.7  
+**Last Updated:** 2025-12-11
+**Build Tool:** Vite 7.2.7
 **Framework:** React 19
 
 ---
@@ -27,6 +27,7 @@ graph TB
         MapSelect[MapSelectionView]
         Difficulty[DifficultySelectionView]
         Shop[ShopView]
+        SkinShop[SkinShopView]
         Compendium[CompendiumView]
         WaveHUD[WaveHUDView]
         TowerPanel[TowerPanelView]
@@ -54,10 +55,12 @@ graph TB
     App --> MapSelect
     App --> Difficulty
     App --> Shop
+    App --> SkinShop
     App --> Compendium
     App --> GameEngine
     App --> Persist
     App --> Balance
+    App --> Maps
     
     GameEngine --> Canvas
     GameEngine --> WaveHUD
@@ -65,7 +68,6 @@ graph TB
     GameEngine --> Upgrade
     GameEngine --> Paragon
     GameEngine --> Balance
-    GameEngine --> Maps
     GameEngine --> Constants
     GameEngine --> GameLogic
     GameEngine --> Render
@@ -74,6 +76,7 @@ graph TB
     Factories --> Constants
     GameLogic --> Balance
     GameLogic --> Constants
+    Render --> Constants
     
     Shop --> Balance
     Compendium --> Balance
@@ -95,7 +98,7 @@ graph TB
 ### Utils Layer  
 **Dependencies:** Data only
 - `gameLogic.js` → `balance.json`, `GameConstants.js`
-- `renderHelpers.js` → None
+- `renderHelpers.js` → `GameConstants.js`
 - `persistence.js` → None
 - `entityFactories.js` → `GameConstants.js`
 
@@ -109,11 +112,11 @@ graph TB
 
 ### Container Layer
 **Dependencies:** Views, Utils, Data, React
-- `GameEngineContainer` → All game Views, all Utils, all Data
+- `GameEngineContainer` → All game Views, all Utils, all Data (injected via props, no direct Maps import)
 
 ### Router Layer
 **Dependencies:** Containers, Views, Utils, Data
-- `App.jsx` → All components, `persistence.js`, `balance.json`
+- `App.jsx` → All components, `persistence.js`, `balance.json`, `maps.js`
 
 ---
 
