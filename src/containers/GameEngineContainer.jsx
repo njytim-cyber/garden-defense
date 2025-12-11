@@ -322,8 +322,9 @@ export default function GameEngineContainer({
                 drawDecorations(ctx, decorationsRef.current);
 
                 // Draw paths
+                const gameTime = Date.now(); // Central time source for all animations
                 mapData.paths.forEach(path => {
-                    drawPath(ctx, path, canvas.width, canvas.height, mapData.sceneryType || 'default', assetLoader);
+                    drawPath(ctx, path, canvas.width, canvas.height, mapData.sceneryType || 'default', assetLoader, gameTime);
                 });
 
                 // DRAW BATTLE SCARS (Decals on path)
@@ -341,11 +342,11 @@ export default function GameEngineContainer({
                         if (tower === selectedTower) {
                             drawTowerRange(ctx, tower, tower.config?.effect);
                         }
-                        drawTower(ctx, tower, assetLoader);
+                        drawTower(ctx, tower, assetLoader, null, gameTime);
                     });
-                    entities.projectiles.forEach(proj => drawProjectile(ctx, proj));
+                    entities.projectiles.forEach(proj => drawProjectile(ctx, proj, gameTime));
 
-                    entities.projectiles.forEach(proj => drawProjectile(ctx, proj));
+
 
                     ctx.restore(); // Restore shake transform
                     animationFrameRef.current = requestAnimationFrame(gameLoop);
@@ -523,7 +524,7 @@ export default function GameEngineContainer({
                         }
 
                         // Draw tower with rotation toward target
-                        drawTower(ctx, tower, assetLoader, currentTarget);
+                        drawTower(ctx, tower, assetLoader, currentTarget, gameTime);
 
                         // SYNERGY LINES (Barracks -> Soldiers)
                         if (tower.config.effect === 'barracks') {
@@ -642,7 +643,7 @@ export default function GameEngineContainer({
                         projectile.x += (dx / dist) * projectile.speed;
                         projectile.y += (dy / dist) * projectile.speed;
 
-                        drawProjectile(ctx, projectile);
+                        drawProjectile(ctx, projectile, gameTime);
                         return true;
                     });
 

@@ -1,111 +1,17 @@
 /**
- * Canvas Rendering Utilities - OPTIMIZED
- * Performance improvements:
- * - Eliminated Date.now() calls (pass gameTime from loop)
- * - Extracted color palettes into constants
- * - Added a11y context helpers
+ * Canvas Rendering Utilities
+ * Extracted from monolith (lines 1661-2260)
+ * Pure drawing functions - no React dependencies
  */
-
-import { PATH_WIDTH, START_POINT_RADIUS, END_POINT_RADIUS } from '../constants/GameConstants';
-import { drawPolygon, drawStar } from './shapeHelpers';
-
-// ============================================================================
-// COLOR PALETTE - Semantic naming for maintainability
-// ============================================================================
-export const COLOR_PALETTE = {
-    // Path colors by theme
-    paths: {
-        ocean: { outer: '#1e40af', inner: '#3b82f6' },
-        volcano: { outer: '#7f1d1d', inner: '#f97316' },
-        magic: { outer: '#581c87', inner: '#a855f7' },
-        desert: { outer: '#92400e', inner: '#eab308' },
-        forest: { outer: '#654321', inner: '#8B7355' },
-        rocky: { outer: '#3f3f46', inner: '#a1a1aa' },
-        castle: { outer: '#292524', inner: '#78716c' },
-        default: { outer: '#78350f', inner: '#a16207' }
-    },
-
-    // Waypoint structures
-    waypoints: {
-        castle: {
-            walls: '#16a34a',
-            towers: '#15803d',
-            door: '#78350f',
-            flag: { pole: '#fbbf24', banner: '#22c55e' }
-        },
-        shrine: {
-            base: '#78716c',
-            structure: '#dc2626',
-            magicAlt: '#a855f7',
-            pillars: '#f5f5f4',
-            glow: 'rgba(220, 38, 38, 0.6)',
-            glowMagic: 'rgba(168, 85, 247, 0.6)',
-            light: '#fecaca',
-            lightMagic: '#e9d5ff'
-        }
-    },
-
-    // Tower ranges by effect
-    towerRanges: {
-        slow: { fill: 'rgba(56, 189, 248, 0.15)', stroke: 'rgba(56, 189, 248, 0.6)' },
-        fire: { fill: 'rgba(249, 115, 22, 0.15)', stroke: 'rgba(249, 115, 22, 0.6)' },
-        poison: { fill: 'rgba(34, 197, 94, 0.15)', stroke: 'rgba(34, 197, 94, 0.6)' },
-        default: { fill: 'rgba(255, 255, 255, 0.1)', stroke: 'rgba(255, 255, 255, 0.5)' }
-    },
-
-    // Status effects
-    statusEffects: {
-        frozen: { glow: '#06b6d4', icon: '#06b6d4' },
-        burning: { glow: '#f97316', icon: '#f97316' },
-        poisoned: { glow: '#22c55e', icon: '#22c55e' }
-    },
-
-    // UI feedback
-    placement: {
-        valid: '34, 197, 94',   // RGB values for rgba()
-        invalid: '239, 68, 68'
-    },
-
-    // Health bars
-    health: {
-        high: '#22c55e',
-        medium: '#eab308',
-        low: '#ef4444',
-        background: '#000'
-    }
-};
-
-// ============================================================================
-// A11Y HELPERS - Announce important events to screen readers
-// ============================================================================
-let ariaLiveRegion = null;
-
-export function initA11yAnnouncer() {
-    if (typeof document === 'undefined') return; // SSR safety
-
-    ariaLiveRegion = document.createElement('div');
-    ariaLiveRegion.setAttribute('aria-live', 'polite');
-    ariaLiveRegion.setAttribute('aria-atomic', 'true');
-    ariaLiveRegion.className = 'sr-only'; // Screen reader only
-    ariaLiveRegion.style.position = 'absolute';
-    ariaLiveRegion.style.left = '-9999px';
-    document.body.appendChild(ariaLiveRegion);
-}
-
-export function announceToScreenReader(message) {
-    if (!ariaLiveRegion) return;
-    ariaLiveRegion.textContent = message;
-}
-
-// ============================================================================
-// RENDERING FUNCTIONS (Optimized)
-// ============================================================================
 
 /**
  * Draw path on canvas
- * @param {number} gameTime - Pass from game loop instead of Date.now()
  */
-export function drawPath(ctx, path, canvasWidth, canvasHeight, sceneryType, assetLoader = null, gameTime = 0) {
+import { PATH_WIDTH, START_POINT_RADIUS, END_POINT_RADIUS } from '../constants/GameConstants';
+import { drawPolygon, drawStar } from './shapeHelpers';
+
+export function drawPath(ctx, path, canvasWidth, canvasHeight, sceneryType, assetLoader = null) {
+
     if (path.length === 0) return;
 
     // Convert waypoints to canvas coordinates
@@ -114,51 +20,47 @@ export function drawPath(ctx, path, canvasWidth, canvasHeight, sceneryType, asse
         y: p.y * canvasHeight
     }));
 
-    // Get theme colors
-    const theme = COLOR_PALETTE.paths[sceneryType] || COLOR_PALETTE.paths.default;
-
-    // Draw path layers (extracted to reduce duplication)
-    drawPathLayer(ctx, points, theme.outer, PATH_WIDTH.outer);
-    drawPathLayer(ctx, points, theme.inner, PATH_WIDTH.inner);
-
-    // Inner shadow for depth
-    ctx.save();
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
-    ctx.lineWidth = PATH_WIDTH.inner - 4;
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
-    ctx.shadowBlur = 8;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 2;
-    drawPathLayer(ctx, points, null, null);
-    ctx.restore();
-
-    // Theme-specific decorations
-    if (sceneryType === 'forest' || sceneryType === 'dense_forest') {
-        drawSteppingStones(ctx, points);
+    // Determine path colors based on scenery type
+    let outerColor, innerColor;
+    switch (sceneryType) {
+        case 'ocean':
+            outerColor = '#1e40af';
+            innerColor = '#3b82f6';
+            break;
+        case 'volcano':
+            outerColor = '#7f1d1d';
+            innerColor = '#f97316';
+            break;
+        case 'magic':
+            outerColor = '#581c87';
+            innerColor = '#a855f7';
+            break;
+        case 'desert':
+            outerColor = '#92400e';
+            innerColor = '#eab308';
+            break;
+        case 'forest':
+        case 'jungle':
+        case 'dense_forest':
+            outerColor = '#654321'; // Brown dirt path
+            innerColor = '#8B7355'; // Lighter dirt
+            break;
+        case 'rocky':
+            outerColor = '#3f3f46';
+            innerColor = '#a1a1aa';
+            break;
+        case 'castle':
+            outerColor = '#292524';
+            innerColor = '#78716c';
+            break;
+        default:
+            outerColor = '#78350f';
+            innerColor = '#a16207';
     }
 
-    if (sceneryType === 'magic') {
-        drawMagicGlow(ctx, points);
-    }
-
-    // Animated dashed border (using gameTime instead of Date.now())
-    const dashOffset = (gameTime / 50) % 20;
-    ctx.setLineDash([8, 6]);
-    ctx.lineDashOffset = -dashOffset;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.lineWidth = 2;
-    drawPathLayer(ctx, points, null, null);
-    ctx.setLineDash([]);
-
-    // Waypoints
-    drawCastle(ctx, points[0].x, points[0].y, assetLoader);
-    drawShrine(ctx, points[points.length - 1].x, points[points.length - 1].y, sceneryType, assetLoader);
-}
-
-// Helper: Draw a path layer (DRY)
-function drawPathLayer(ctx, points, strokeStyle, lineWidth) {
-    if (strokeStyle) ctx.strokeStyle = strokeStyle;
-    if (lineWidth) ctx.lineWidth = lineWidth;
+    // Outer path (darker)
+    ctx.strokeStyle = outerColor;
+    ctx.lineWidth = PATH_WIDTH.outer;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
@@ -168,116 +70,155 @@ function drawPathLayer(ctx, points, strokeStyle, lineWidth) {
         ctx.lineTo(points[i].x, points[i].y);
     }
     ctx.stroke();
-}
 
-// Helper: Stepping stones
-function drawSteppingStones(ctx, points) {
-    ctx.fillStyle = '#9CA3AF';
-    const stoneSpacing = 30;
-    for (let i = 0; i < points.length - 1; i++) {
-        const dx = points[i + 1].x - points[i].x;
-        const dy = points[i + 1].y - points[i].y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const steps = Math.floor(dist / stoneSpacing);
-        for (let j = 0; j < steps; j++) {
-            const t = j / steps;
-            ctx.beginPath();
-            ctx.arc(points[i].x + dx * t, points[i].y + dy * t, 4, 0, Math.PI * 2);
-            ctx.fill();
+    // Inner path (lighter)
+    ctx.strokeStyle = innerColor;
+    ctx.lineWidth = PATH_WIDTH.inner;
+
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+    }
+    ctx.stroke();
+
+    // Inner shadow for depth (dug-in effect)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.lineWidth = PATH_WIDTH.inner - 4;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 2;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // Add stepping stones/cobblestone pattern for forest paths
+    if (sceneryType === 'forest' || sceneryType === 'dense_forest') {
+        ctx.fillStyle = '#9CA3AF';
+        const stoneSpacing = 30;
+        for (let i = 0; i < points.length - 1; i++) {
+            const dx = points[i + 1].x - points[i].x;
+            const dy = points[i + 1].y - points[i].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const steps = Math.floor(dist / stoneSpacing);
+            for (let j = 0; j < steps; j++) {
+                const t = j / steps;
+                const sx = points[i].x + dx * t;
+                const sy = points[i].y + dy * t;
+                ctx.beginPath();
+                ctx.arc(sx, sy, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
     }
-}
 
-// Helper: Magic glow
-function drawMagicGlow(ctx, points) {
-    ctx.strokeStyle = 'rgba(168, 85, 247, 0.4)';
-    ctx.lineWidth = PATH_WIDTH.outer + 6;
-    drawPathLayer(ctx, points, null, null);
-}
-
-// Helper: Castle waypoint
-function drawCastle(ctx, x, y, assetLoader) {
-    const img = assetLoader?.getWaypointAsset('castle');
-    if (img) {
-        const size = 96;
-        ctx.drawImage(img, x - size / 2, y - size / 2 - 10, size, size);
-        return;
+    // Add glow effect for magical maps
+    if (sceneryType === 'magic') {
+        ctx.strokeStyle = 'rgba(168, 85, 247, 0.4)';
+        ctx.lineWidth = PATH_WIDTH.outer + 6;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.stroke();
     }
 
-    // Fallback: procedural castle
-    const c = COLOR_PALETTE.waypoints.castle;
-    ctx.fillStyle = c.walls;
-    ctx.fillRect(x - 24, y - 16, 48, 32);
-    ctx.fillRect(x - 28, y - 32, 16, 24);
-    ctx.fillRect(x + 12, y - 32, 16, 24);
-
-    ctx.fillStyle = c.towers;
-    for (let i = 0; i < 3; i++) {
-        ctx.fillRect(x - 28 + i * 8, y - 36, 6, 4);
-        ctx.fillRect(x + 12 + i * 8, y - 36, 6, 4);
-    }
-
-    ctx.fillStyle = c.door;
-    ctx.fillRect(x - 8, y - 8, 16, 24);
-
-    ctx.strokeStyle = c.flag.pole;
-    ctx.lineWidth = 4;
+    // Dashed border with flowing animation (spawn → base direction)
+    const dashOffset = (Date.now() / 50) % 20; // Animate over time
+    ctx.setLineDash([8, 6]);
+    ctx.lineDashOffset = -dashOffset; // Negative to flow forward
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'; // Reduced opacity for subtlety
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(x, y - 32);
-    ctx.lineTo(x, y - 52);
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+    }
     ctx.stroke();
+    ctx.setLineDash([]); // Reset line dash
 
-    ctx.fillStyle = c.flag.banner;
-    ctx.beginPath();
-    ctx.moveTo(x, y - 52);
-    ctx.lineTo(x + 16, y - 44);
-    ctx.lineTo(x, y - 36);
-    ctx.fill();
-}
+    // Start point - Castle
+    const startX = points[0].x;
+    const startY = points[0].y;
+    const castleImg = assetLoader?.getWaypointAsset('castle');
 
-// Helper: Shrine waypoint
-function drawShrine(ctx, x, y, sceneryType, assetLoader) {
-    const img = assetLoader?.getWaypointAsset('shrine');
-    if (img) {
+    if (castleImg) {
+        // Draw castle image (128px, centered)
         const size = 96;
-        ctx.drawImage(img, x - size / 2, y - size / 2 - 10, size, size);
-        return;
+        ctx.drawImage(castleImg, startX - size / 2, startY - size / 2 - 10, size, size);
+    } else {
+        // Fallback: procedural castle (2x scale)
+        ctx.fillStyle = '#16a34a';
+        ctx.fillRect(startX - 24, startY - 16, 48, 32);
+        ctx.fillRect(startX - 28, startY - 32, 16, 24);
+        ctx.fillRect(startX + 12, startY - 32, 16, 24);
+        ctx.fillStyle = '#15803d';
+        for (let i = 0; i < 3; i++) {
+            ctx.fillRect(startX - 28 + i * 8, startY - 36, 6, 4);
+            ctx.fillRect(startX + 12 + i * 8, startY - 36, 6, 4);
+        }
+        ctx.fillStyle = '#78350f';
+        ctx.fillRect(startX - 8, startY - 8, 16, 24);
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY - 32);
+        ctx.lineTo(startX, startY - 52);
+        ctx.stroke();
+        ctx.fillStyle = '#22c55e';
+        ctx.beginPath();
+        ctx.moveTo(startX, startY - 52);
+        ctx.lineTo(startX + 16, startY - 44);
+        ctx.lineTo(startX, startY - 36);
+        ctx.fill();
     }
 
-    // Fallback: procedural shrine
-    const s = COLOR_PALETTE.waypoints.shrine;
-    const isMagic = sceneryType === 'magic';
+    // End point - Sacred Shrine
+    const endPoint = points[points.length - 1];
+    const shrineX = endPoint.x;
+    const shrineY = endPoint.y;
+    const shrineImg = assetLoader?.getWaypointAsset('shrine');
 
-    ctx.fillStyle = s.base;
-    ctx.fillRect(x - 32, y + 12, 64, 8);
-    ctx.fillRect(x - 28, y + 4, 56, 8);
-
-    ctx.fillStyle = isMagic ? s.magicAlt : s.structure;
-    ctx.beginPath();
-    ctx.moveTo(x - 24, y + 4);
-    ctx.lineTo(x - 24, y - 16);
-    ctx.lineTo(x - 16, y - 24);
-    ctx.lineTo(x, y - 32);
-    ctx.lineTo(x + 16, y - 24);
-    ctx.lineTo(x + 24, y - 16);
-    ctx.lineTo(x + 24, y + 4);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = s.pillars;
-    ctx.fillRect(x - 20, y - 12, 6, 16);
-    ctx.fillRect(x + 14, y - 12, 6, 16);
-
-    ctx.strokeStyle = isMagic ? s.glowMagic : s.glow;
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.arc(x, y - 12, 36, 0, Math.PI * 2);
-    ctx.stroke();
-
-    ctx.fillStyle = isMagic ? s.lightMagic : s.light;
-    ctx.beginPath();
-    ctx.arc(x, y - 20, 8, 0, Math.PI * 2);
-    ctx.fill();
+    if (shrineImg) {
+        // Draw shrine image (128px, centered)
+        const size = 96;
+        ctx.drawImage(shrineImg, shrineX - size / 2, shrineY - size / 2 - 10, size, size);
+    } else {
+        // Fallback: procedural shrine (2x scale)
+        ctx.fillStyle = '#78716c';
+        ctx.fillRect(shrineX - 32, shrineY + 12, 64, 8);
+        ctx.fillRect(shrineX - 28, shrineY + 4, 56, 8);
+        ctx.fillStyle = sceneryType === 'magic' ? '#a855f7' : '#dc2626';
+        ctx.beginPath();
+        ctx.moveTo(shrineX - 24, shrineY + 4);
+        ctx.lineTo(shrineX - 24, shrineY - 16);
+        ctx.lineTo(shrineX - 16, shrineY - 24);
+        ctx.lineTo(shrineX, shrineY - 32);
+        ctx.lineTo(shrineX + 16, shrineY - 24);
+        ctx.lineTo(shrineX + 24, shrineY - 16);
+        ctx.lineTo(shrineX + 24, shrineY + 4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#f5f5f4';
+        ctx.fillRect(shrineX - 20, shrineY - 12, 6, 16);
+        ctx.fillRect(shrineX + 14, shrineY - 12, 6, 16);
+        ctx.strokeStyle = sceneryType === 'magic' ? 'rgba(168, 85, 247, 0.6)' : 'rgba(220, 38, 38, 0.6)';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.arc(shrineX, shrineY - 12, 36, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = sceneryType === 'magic' ? '#e9d5ff' : '#fecaca';
+        ctx.beginPath();
+        ctx.arc(shrineX, shrineY - 20, 8, 0, Math.PI * 2);
+        ctx.fill();
+    }
 }
 
 /**
@@ -285,14 +226,31 @@ function drawShrine(ctx, x, y, sceneryType, assetLoader) {
  */
 export function drawTowerRange(ctx, tower) {
     const { x, y, range, config } = tower;
-    const theme = COLOR_PALETTE.towerRanges[config.effect] || COLOR_PALETTE.towerRanges.default;
 
-    ctx.fillStyle = theme.fill;
+    // Determine range color based on tower type
+    let fillColor, strokeColor;
+    if (config.effect === 'slow') {
+        fillColor = 'rgba(56, 189, 248, 0.15)'; // Cyan for slow
+        strokeColor = 'rgba(56, 189, 248, 0.6)';
+    } else if (config.effect === 'fire') {
+        fillColor = 'rgba(249, 115, 22, 0.15)'; // Orange for fire
+        strokeColor = 'rgba(249, 115, 22, 0.6)';
+    } else if (config.effect === 'poison') {
+        fillColor = 'rgba(34, 197, 94, 0.15)'; // Green for poison
+        strokeColor = 'rgba(34, 197, 94, 0.6)';
+    } else {
+        fillColor = 'rgba(255, 255, 255, 0.1)'; // White for default
+        strokeColor = 'rgba(255, 255, 255, 0.5)';
+    }
+
+    // Draw filled circle
+    ctx.fillStyle = fillColor;
     ctx.beginPath();
     ctx.arc(x, y, range, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.strokeStyle = theme.stroke;
+    // Draw stroke border
+    ctx.strokeStyle = strokeColor;
     ctx.lineWidth = 2;
     ctx.setLineDash([5, 5]);
     ctx.stroke();
@@ -301,34 +259,42 @@ export function drawTowerRange(ctx, tower) {
 
 /**
  * Draw tower on canvas
- * @param {number} gameTime - Pass from game loop
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {Object} tower
+ * @param {Object} assetLoader
+ * @param {Object|null} target - The enemy this tower is targeting (for rotation)
  */
-export function drawTower(ctx, tower, assetLoader = null, target = null, gameTime = 0) {
+export function drawTower(ctx, tower, assetLoader = null, target = null) {
     const { x, y, config, level, isParagon, type } = tower;
 
-    // Calculate rotation
+    // Calculate rotation angle
     let rotation = 0;
-    if (target?.x !== undefined && target?.y !== undefined) {
-        rotation = Math.atan2(target.y - y, target.x - x) + Math.PI / 2;
+    if (target && target.x !== undefined && target.y !== undefined) {
+        // Rotate to face target
+        rotation = Math.atan2(target.y - y, target.x - x) + Math.PI / 2; // +90° because sprite faces up
     } else if (!config?.isTrap && config?.effect !== 'income') {
-        // Idle scan (using gameTime)
-        rotation = Math.sin(gameTime / 2000 + x * 0.01) * 0.4;
+        // Idle scanning animation when no target (slow oscillation)
+        const idleTime = Date.now() / 2000; // Slow cycle
+        rotation = Math.sin(idleTime + x * 0.01) * 0.4; // ±23° sweep, offset by position
     }
 
-    // Pop animation
+    // Try to load asset
+    const asset = assetLoader?.getTowerAsset(type);
+
+    // Calculate pop animation scale
     let scale = 1;
     if (tower.createdAt) {
-        const age = gameTime - tower.createdAt;
+        const age = Date.now() - tower.createdAt;
         if (age < 400) {
-            const t = age / 400;
+            const t = age / 400; // 400ms duration
+            // Ease out elastic: overshoot slightly
             scale = t < 0.5 ? 2 * t * t : 1 + Math.sin((t - 0.5) * Math.PI * 2) * 0.1 * (1 - t) * 2;
             if (scale < 0) scale = 0;
         }
     }
 
-    const asset = assetLoader?.getTowerAsset(type);
-
     if (asset) {
+        // Render SVG asset with rotation
         const baseSize = 60 + level * 3;
         const size = baseSize * scale;
 
@@ -338,6 +304,7 @@ export function drawTower(ctx, tower, assetLoader = null, target = null, gameTim
         ctx.drawImage(asset, -size / 2, -size / 2, size, size);
         ctx.restore();
 
+        // Paragon golden glow
         if (isParagon) {
             ctx.strokeStyle = 'rgba(251, 191, 36, 0.7)';
             ctx.lineWidth = 4;
@@ -346,13 +313,15 @@ export function drawTower(ctx, tower, assetLoader = null, target = null, gameTim
             ctx.stroke();
         }
     } else {
-        // Placeholder shapes
+        // Themed placeholder based on tower effect
         const size = 15 + level;
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(rotation);
 
+        // Different shapes for different tower types
         if (config.isTrap) {
+            // Traps: Triangle
             ctx.fillStyle = config.color;
             ctx.beginPath();
             ctx.moveTo(0, -size);
@@ -361,22 +330,27 @@ export function drawTower(ctx, tower, assetLoader = null, target = null, gameTim
             ctx.closePath();
             ctx.fill();
         } else if (config.effect === 'income') {
+            // Bank: Star
             drawStar(ctx, 0, 0, 5, size, size * 0.5, config.color);
         } else if (config.effect === 'barracks') {
+            // Barracks: Square
             ctx.fillStyle = config.color;
             ctx.fillRect(-size, -size, size * 2, size * 2);
         } else {
+            // Regular towers: Pentagon
             drawPolygon(ctx, 0, 0, size, config.color);
         }
 
         ctx.restore();
 
+        // Border
         ctx.strokeStyle = isParagon ? '#fbbf24' : '#fff';
         ctx.lineWidth = isParagon ? 3 : 2;
         ctx.beginPath();
         ctx.arc(x, y, size, 0, Math.PI * 2);
         ctx.stroke();
 
+        // Paragon glow
         if (isParagon) {
             ctx.strokeStyle = 'rgba(251, 191, 36, 0.5)';
             ctx.lineWidth = 6;
@@ -386,7 +360,7 @@ export function drawTower(ctx, tower, assetLoader = null, target = null, gameTim
         }
     }
 
-    // Level indicator
+    // Level indicator (always show)
     if (level > 1) {
         ctx.fillStyle = '#000';
         ctx.font = 'bold 12px Arial';
@@ -405,48 +379,55 @@ export function drawTower(ctx, tower, assetLoader = null, target = null, gameTim
 export function drawEnemy(ctx, enemy, assetLoader = null) {
     const { x, y, radius, color, maxHealth, health, isStealthed, type, isBoss, isArmored } = enemy;
 
+    // Stealth effect
     if (isStealthed) {
         ctx.globalAlpha = 0.3;
     }
 
-    // Status effects
+    // Status Effects Visuals
     if (enemy.frozen > 0) {
-        ctx.shadowColor = COLOR_PALETTE.statusEffects.frozen.glow;
+        ctx.shadowColor = '#06b6d4'; // Cyan glow
         ctx.shadowBlur = 10;
-        ctx.filter = 'brightness(1.2) hue-rotate(180deg)';
+        ctx.filter = 'brightness(1.2) hue-rotate(180deg)'; // Tint blue
     } else if (enemy.burning > 0) {
-        ctx.shadowColor = COLOR_PALETTE.statusEffects.burning.glow;
+        ctx.shadowColor = '#f97316'; // Orange glow
         ctx.shadowBlur = 10;
-        ctx.filter = 'sepia(1) saturate(5) hue-rotate(-30deg)';
+        ctx.filter = 'sepia(1) saturate(5) hue-rotate(-30deg)'; // Tint orange
     } else if (enemy.poisoned > 0) {
-        ctx.shadowColor = COLOR_PALETTE.statusEffects.poisoned.glow;
+        ctx.shadowColor = '#22c55e'; // Green glow
         ctx.shadowBlur = 10;
-        ctx.filter = 'sepia(1) saturate(3) hue-rotate(80deg)';
+        ctx.filter = 'sepia(1) saturate(3) hue-rotate(80deg)'; // Tint green
     }
 
-    // Hit flash
+    // Hit flash effect (white brightness when recently hit)
     const isFlashing = enemy.hitFlash && enemy.hitFlash > 0;
     if (isFlashing) {
         ctx.save();
-        ctx.filter = 'brightness(2.5) saturate(0)';
+        ctx.filter = 'brightness(2.5) saturate(0)'; // White flash
     }
 
+    // Try to load asset
     const asset = assetLoader?.getEnemyAsset(type);
 
     if (asset) {
-        const size = radius * 3.6;
+        // Render SVG asset
+        const size = radius * 3.6; // Make images more visible
         ctx.drawImage(asset, x - size / 2, y - size / 2, size, size);
     } else {
-        // Placeholder shapes
+        // Themed placeholder based on enemy type
         ctx.save();
         ctx.translate(x, y);
+
         ctx.fillStyle = color;
 
         if (isBoss) {
+            // Bosses: Hexagon
             drawPolygon(ctx, 0, 0, radius, 6, color);
+            // Boss crown
             ctx.fillStyle = '#fbbf24';
             drawStar(ctx, 0, -radius - 5, 3, 8, 4, '#fbbf24');
         } else if (isArmored) {
+            // Armored: Diamond shape
             ctx.beginPath();
             ctx.moveTo(0, -radius);
             ctx.lineTo(radius, 0);
@@ -455,9 +436,11 @@ export function drawEnemy(ctx, enemy, assetLoader = null) {
             ctx.closePath();
             ctx.fill();
         } else if (isStealthed) {
+            // Stealth: Wavy ghost shape
             ctx.beginPath();
             ctx.arc(0, -radius / 4, radius * 0.7, 0, Math.PI * 2);
             ctx.fill();
+            // Ghost tail
             ctx.beginPath();
             ctx.moveTo(-radius, radius / 2);
             ctx.lineTo(-radius / 2, radius);
@@ -468,11 +451,13 @@ export function drawEnemy(ctx, enemy, assetLoader = null) {
             ctx.closePath();
             ctx.fill();
         } else {
+            // Basic enemies: Pentagon
             drawPolygon(ctx, 0, 0, radius, 5, color);
         }
 
         ctx.restore();
 
+        // Border
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -480,16 +465,20 @@ export function drawEnemy(ctx, enemy, assetLoader = null) {
         ctx.stroke();
     }
 
-    // Status icons
+    // Draw status effect icons overlay
     if (enemy.frozen > 0) {
-        drawStar(ctx, x + radius, y - radius, 4, 6, 3, COLOR_PALETTE.statusEffects.frozen.icon);
+        ctx.fillStyle = '#06b6d4';
+        ctx.beginPath();
+        drawStar(ctx, x + radius, y - radius, 4, 6, 3, '#06b6d4'); // Ice crystal
+        ctx.fill();
     }
     if (enemy.burning > 0) {
         ctx.font = '12px Arial';
-        ctx.fillStyle = COLOR_PALETTE.statusEffects.burning.icon;
+        ctx.fillStyle = '#f97316';
         ctx.fillText('🔥', x - radius, y - radius);
     }
 
+    // Restore flash filter before drawing health bar
     if (isFlashing) {
         ctx.restore();
     }
@@ -498,14 +487,14 @@ export function drawEnemy(ctx, enemy, assetLoader = null) {
     const barWidth = radius * 2;
     const barHeight = 4;
     const barY = y - radius - 8;
-    const healthPercent = health / maxHealth;
 
-    ctx.fillStyle = COLOR_PALETTE.health.background;
+    // Background
+    ctx.fillStyle = '#000';
     ctx.fillRect(x - barWidth / 2, barY, barWidth, barHeight);
 
-    ctx.fillStyle = healthPercent > 0.5 ? COLOR_PALETTE.health.high :
-        healthPercent > 0.25 ? COLOR_PALETTE.health.medium :
-            COLOR_PALETTE.health.low;
+    // Health
+    const healthPercent = health / maxHealth;
+    ctx.fillStyle = healthPercent > 0.5 ? '#22c55e' : healthPercent > 0.25 ? '#eab308' : '#ef4444';
     ctx.fillRect(x - barWidth / 2, barY, barWidth * healthPercent, barHeight);
 
     ctx.globalAlpha = 1;
@@ -514,12 +503,13 @@ export function drawEnemy(ctx, enemy, assetLoader = null) {
 /**
  * Draw projectile on canvas
  */
-export function drawProjectile(ctx, projectile, gameTime = 0) {
+export function drawProjectile(ctx, projectile) {
     const { x, y, color, effect } = projectile;
 
     ctx.save();
 
     if (effect === 'void') {
+        // Void projectile - black hole with purple aura
         ctx.shadowBlur = 15;
         ctx.shadowColor = '#a855f7';
 
@@ -532,18 +522,20 @@ export function drawProjectile(ctx, projectile, gameTime = 0) {
         ctx.arc(x, y, 8, 0, Math.PI * 2);
         ctx.fill();
 
+        // Core
         ctx.fillStyle = '#000';
         ctx.beginPath();
         ctx.arc(x, y, 4, 0, Math.PI * 2);
         ctx.fill();
 
+        // Pulsing ring
         ctx.strokeStyle = color;
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Sparkles (using gameTime)
+        // Sparkles
         for (let i = 0; i < 4; i++) {
-            const angle = (i / 4) * Math.PI * 2 + gameTime / 200;
+            const angle = (i / 4) * Math.PI * 2 + Date.now() / 200;
             const sx = x + Math.cos(angle) * 7;
             const sy = y + Math.sin(angle) * 7;
             ctx.fillStyle = '#e9d5ff';
@@ -551,9 +543,11 @@ export function drawProjectile(ctx, projectile, gameTime = 0) {
         }
 
     } else if (effect === 'burn') {
+        // Fire projectile - fireball with trail
         ctx.shadowBlur = 15;
         ctx.shadowColor = '#f97316';
 
+        // Outer glow
         const fireGrad = ctx.createRadialGradient(x, y, 0, x, y, 8);
         fireGrad.addColorStop(0, '#fef3c7');
         fireGrad.addColorStop(0.4, '#fbbf24');
@@ -564,11 +558,13 @@ export function drawProjectile(ctx, projectile, gameTime = 0) {
         ctx.arc(x, y, 8, 0, Math.PI * 2);
         ctx.fill();
 
+        // Core
         ctx.fillStyle = color;
         ctx.beginPath();
         ctx.arc(x, y, 5, 0, Math.PI * 2);
         ctx.fill();
 
+        // Flame trail
         const trailGrad = ctx.createRadialGradient(x - 4, y, 0, x - 4, y, 5);
         trailGrad.addColorStop(0, 'rgba(251, 146, 60, 0.6)');
         trailGrad.addColorStop(1, 'rgba(251, 146, 60, 0)');
@@ -578,6 +574,7 @@ export function drawProjectile(ctx, projectile, gameTime = 0) {
         ctx.fill();
 
     } else if (effect === 'freeze' || effect === 'slow') {
+        // Ice shard
         ctx.shadowBlur = 10;
         ctx.shadowColor = '#60a5fa';
 
@@ -596,11 +593,13 @@ export function drawProjectile(ctx, projectile, gameTime = 0) {
         ctx.fill();
         ctx.stroke();
 
+        // Ice sparkles
         ctx.fillStyle = '#fff';
         ctx.fillRect(x - 2, y - 2, 1, 1);
         ctx.fillRect(x + 1, y + 1, 1, 1);
 
     } else if (effect === 'poison') {
+        // Poison cloud/blob
         ctx.shadowBlur = 12;
         ctx.shadowColor = '#84cc16';
 
@@ -610,6 +609,7 @@ export function drawProjectile(ctx, projectile, gameTime = 0) {
         poisonGrad.addColorStop(1, 'rgba(132, 204, 22, 0)');
         ctx.fillStyle = poisonGrad;
 
+        // Irregular blob
         ctx.beginPath();
         ctx.arc(x, y, 5, 0, Math.PI * 2);
         ctx.arc(x - 3, y + 2, 2, 0, Math.PI * 2);
@@ -617,10 +617,11 @@ export function drawProjectile(ctx, projectile, gameTime = 0) {
         ctx.fill();
 
     } else {
-        // Standard arrow
+        // Standard projectile - arrow
         ctx.shadowBlur = 6;
         ctx.shadowColor = color;
 
+        // Arrow shaft
         ctx.strokeStyle = '#78350f';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -628,6 +629,7 @@ export function drawProjectile(ctx, projectile, gameTime = 0) {
         ctx.lineTo(x + 5, y);
         ctx.stroke();
 
+        // Arrow head
         ctx.fillStyle = color || '#6b7280';
         ctx.beginPath();
         ctx.moveTo(x + 5, y);
@@ -636,6 +638,7 @@ export function drawProjectile(ctx, projectile, gameTime = 0) {
         ctx.closePath();
         ctx.fill();
 
+        // Feathers
         ctx.fillStyle = '#dc2626';
         ctx.beginPath();
         ctx.moveTo(x - 6, y - 2);
@@ -662,6 +665,7 @@ export function drawProjectile(ctx, projectile, gameTime = 0) {
 export function drawScenery(ctx, x, y, type) {
     switch (type) {
         case 'forest':
+            // Simple tree
             ctx.fillStyle = '#365314';
             ctx.fillRect(x - 3, y - 8, 6, 8);
             ctx.fillStyle = '#4ade80';
@@ -671,6 +675,7 @@ export function drawScenery(ctx, x, y, type) {
             break;
 
         case 'rock':
+            // Rock
             ctx.fillStyle = '#78716c';
             ctx.beginPath();
             ctx.arc(x, y, 5, 0, Math.PI * 2);
@@ -678,6 +683,7 @@ export function drawScenery(ctx, x, y, type) {
             break;
 
         case 'flower':
+            // Flower
             ctx.fillStyle = '#ec4899';
             ctx.beginPath();
             ctx.arc(x, y, 3, 0, Math.PI * 2);
@@ -710,26 +716,33 @@ export function drawWaterZone(ctx, zone, canvasWidth, canvasHeight) {
  * Draw background with map color
  */
 export function drawBackground(ctx, canvasWidth, canvasHeight, bgColor, sceneryType = 'default') {
+    // Base fill
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
+    // Add themed gradients and textures
     switch (sceneryType) {
         case 'forest':
         case 'dense_forest':
         case 'jungle':
+            // Green gradient
             const forestGrad = ctx.createRadialGradient(canvasWidth / 2, canvasHeight / 2, 0, canvasWidth / 2, canvasHeight / 2, canvasWidth / 2);
             forestGrad.addColorStop(0, 'rgba(134, 239, 172, 0.2)');
             forestGrad.addColorStop(1, 'rgba(21, 128, 61, 0.3)');
             ctx.fillStyle = forestGrad;
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
+            // Grass texture dots  
             ctx.fillStyle = 'rgba(34, 197, 94, 0.15)';
             for (let i = 0; i < 100; i++) {
-                ctx.fillRect(Math.random() * canvasWidth, Math.random() * canvasHeight, 3, 3);
+                const x = Math.random() * canvasWidth;
+                const y = Math.random() * canvasHeight;
+                ctx.fillRect(x, y, 3, 3);
             }
             break;
 
         case 'ocean':
+            // Blue wave gradient
             const oceanGrad = ctx.createLinearGradient(0, 0, 0, canvasHeight);
             oceanGrad.addColorStop(0, 'rgba(14, 116, 144, 0.3)');
             oceanGrad.addColorStop(0.5, 'rgba(6, 182, 212, 0.2)');
@@ -737,6 +750,7 @@ export function drawBackground(ctx, canvasWidth, canvasHeight, bgColor, sceneryT
             ctx.fillStyle = oceanGrad;
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
+            // Wave patterns
             ctx.strokeStyle = 'rgba(165, 243, 252, 0.3)';
             ctx.lineWidth = 2;
             for (let y = 50; y < canvasHeight; y += 60) {
@@ -751,19 +765,24 @@ export function drawBackground(ctx, canvasWidth, canvasHeight, bgColor, sceneryT
             break;
 
         case 'desert':
+            // Sandy gradient
             const desertGrad = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
             desertGrad.addColorStop(0, 'rgba(251, 191, 36, 0.3)');
             desertGrad.addColorStop(1, 'rgba(202, 138, 4, 0.2)');
             ctx.fillStyle = desertGrad;
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
+            // Sand texture
             ctx.fillStyle = 'rgba(217, 119, 6, 0.1)';
             for (let i = 0; i < 150; i++) {
-                ctx.fillRect(Math.random() * canvasWidth, Math.random() * canvasHeight, 2, 2);
+                const x = Math.random() * canvasWidth;
+                const y = Math.random() * canvasHeight;
+                ctx.fillRect(x, y, 2, 2);
             }
             break;
 
         case 'volcano':
+            // Lava gradient
             const volcanoGrad = ctx.createRadialGradient(canvasWidth / 2, canvasHeight / 2, 0, canvasWidth / 2, canvasHeight / 2, canvasWidth / 2);
             volcanoGrad.addColorStop(0, 'rgba(220, 38, 38, 0.4)');
             volcanoGrad.addColorStop(0.7, 'rgba(127, 29, 29, 0.3)');
@@ -771,6 +790,7 @@ export function drawBackground(ctx, canvasWidth, canvasHeight, bgColor, sceneryT
             ctx.fillStyle = volcanoGrad;
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
+            // Ember particles
             ctx.fillStyle = 'rgba(251, 146, 60, 0.6)';
             for (let i = 0; i < 30; i++) {
                 const x = Math.random() * canvasWidth;
@@ -783,12 +803,14 @@ export function drawBackground(ctx, canvasWidth, canvasHeight, bgColor, sceneryT
             break;
 
         case 'magic':
+            // Purple magical gradient
             const magicGrad = ctx.createRadialGradient(canvasWidth / 2, canvasHeight / 2, 0, canvasWidth / 2, canvasHeight / 2, canvasWidth / 2);
             magicGrad.addColorStop(0, 'rgba(168, 85, 247, 0.3)');
             magicGrad.addColorStop(1, 'rgba(88, 28, 135, 0.4)');
             ctx.fillStyle = magicGrad;
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
+            // Sparkles
             ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
             for (let i = 0; i < 40; i++) {
                 const x = Math.random() * canvasWidth;
@@ -798,12 +820,14 @@ export function drawBackground(ctx, canvasWidth, canvasHeight, bgColor, sceneryT
             break;
 
         case 'city':
+            // Urban gradient
             const cityGrad = ctx.createLinearGradient(0, 0, 0, canvasHeight);
             cityGrad.addColorStop(0, 'rgba(71, 85, 105, 0.2)');
             cityGrad.addColorStop(1, 'rgba(30, 41, 59, 0.3)');
             ctx.fillStyle = cityGrad;
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
+            // Grid pattern
             ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
             ctx.lineWidth = 1;
             for (let x = 0; x < canvasWidth; x += 50) {
@@ -821,12 +845,14 @@ export function drawBackground(ctx, canvasWidth, canvasHeight, bgColor, sceneryT
             break;
 
         case 'castle':
+            // Stone gradient
             const castleGrad = ctx.createLinearGradient(0, 0, canvasWidth, 0);
             castleGrad.addColorStop(0, 'rgba(68, 64, 60, 0.2)');
             castleGrad.addColorStop(1, 'rgba(28, 25, 23, 0.3)');
             ctx.fillStyle = castleGrad;
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
+            // Stone blocks
             ctx.strokeStyle = 'rgba(120, 113, 108, 0.3)';
             ctx.lineWidth = 2;
             for (let y = 0; y < canvasHeight; y += 40) {
@@ -837,12 +863,14 @@ export function drawBackground(ctx, canvasWidth, canvasHeight, bgColor, sceneryT
             break;
 
         case 'rocky':
+            // Rocky gray gradient
             const rockyGrad = ctx.createRadialGradient(canvasWidth / 2, canvasHeight / 2, 0, canvasWidth / 2, canvasHeight / 2, canvasWidth / 2);
             rockyGrad.addColorStop(0, 'rgba(161, 161, 170, 0.2)');
             rockyGrad.addColorStop(1, 'rgba(63, 63, 70, 0.3)');
             ctx.fillStyle = rockyGrad;
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
+            // Rock texture
             ctx.fillStyle = 'rgba(113, 113, 122, 0.2)';
             for (let i = 0; i < 50; i++) {
                 const x = Math.random() * canvasWidth;
@@ -856,12 +884,14 @@ export function drawBackground(ctx, canvasWidth, canvasHeight, bgColor, sceneryT
 
         case 'rainbow':
         case 'cloud':
+            // Sky gradient with clouds
             const skyGrad = ctx.createLinearGradient(0, 0, 0, canvasHeight);
             skyGrad.addColorStop(0, 'rgba(186, 230, 253, 0.4)');
             skyGrad.addColorStop(1, 'rgba(224, 242, 254, 0.3)');
             ctx.fillStyle = skyGrad;
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
+            // Fluffy clouds
             ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
             for (let i = 0; i < 8; i++) {
                 const x = (i * canvasWidth / 8) + Math.random() * 50;
@@ -875,6 +905,7 @@ export function drawBackground(ctx, canvasWidth, canvasHeight, bgColor, sceneryT
             break;
 
         default:
+            // Simple gradient for other types
             const defaultGrad = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
             const lighterBg = adjustColor(bgColor, 20);
             const darkerBg = adjustColor(bgColor, -20);
@@ -886,7 +917,9 @@ export function drawBackground(ctx, canvasWidth, canvasHeight, bgColor, sceneryT
     }
 }
 
+// Helper function to adjust color brightness
 function adjustColor(color, amount) {
+    // Simple brightness adjustment for hex colors
     const num = parseInt(color.replace('#', ''), 16);
     const r = Math.min(255, Math.max(0, (num >> 16) + amount));
     const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amount));
@@ -896,13 +929,15 @@ function adjustColor(color, amount) {
 
 /**
  * Draw range indicator for tower placement
- * @param {number} gameTime - Pass from game loop
  */
-export function drawRangeIndicator(ctx, x, y, range, isValid, gameTime = 0) {
-    const pulse = Math.sin(gameTime / 300) * 0.05 + 1;
+export function drawRangeIndicator(ctx, x, y, range, isValid) {
+    // Subtle pulsing effect for attention
+    const pulse = Math.sin(Date.now() / 300) * 0.05 + 1;
     const displayRange = range * pulse;
-    const validColor = isValid ? COLOR_PALETTE.placement.valid : COLOR_PALETTE.placement.invalid;
 
+    const validColor = isValid ? '34, 197, 94' : '239, 68, 68'; // RGB values
+
+    // Layer 1: Outer white glow for contrast on dark backgrounds
     ctx.strokeStyle = `rgba(255, 255, 255, 0.7)`;
     ctx.lineWidth = 5;
     ctx.setLineDash([]);
@@ -910,12 +945,14 @@ export function drawRangeIndicator(ctx, x, y, range, isValid, gameTime = 0) {
     ctx.arc(x, y, displayRange, 0, Math.PI * 2);
     ctx.stroke();
 
+    // Layer 2: Black outline for contrast on light backgrounds  
     ctx.strokeStyle = `rgba(0, 0, 0, 0.6)`;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(x, y, displayRange, 0, Math.PI * 2);
     ctx.stroke();
 
+    // Layer 3: Colored inner line (green/red)
     ctx.strokeStyle = `rgba(${validColor}, 0.9)`;
     ctx.lineWidth = 4;
     ctx.setLineDash([12, 6]);
@@ -924,11 +961,13 @@ export function drawRangeIndicator(ctx, x, y, range, isValid, gameTime = 0) {
     ctx.stroke();
     ctx.setLineDash([]);
 
+    // Layer 4: Filled semi-transparent area
     ctx.fillStyle = `rgba(${validColor}, 0.15)`;
     ctx.beginPath();
     ctx.arc(x, y, displayRange, 0, Math.PI * 2);
     ctx.fill();
 
+    // Draw tower preview at center
     ctx.fillStyle = `rgba(${validColor}, 0.6)`;
     ctx.beginPath();
     ctx.arc(x, y, 15, 0, Math.PI * 2);
@@ -955,20 +994,23 @@ export function drawFloatingText(ctx, text, x, y, alpha, color = '#fff') {
 
 export function drawScar(ctx, scar) {
     ctx.save();
-    const ageFactor = scar.life / 600;
+    const ageFactor = scar.life / 600; // 0 to 1
     ctx.globalAlpha = Math.min(scar.opacity, ageFactor);
     ctx.translate(scar.x, scar.y);
     ctx.rotate(scar.rotation || 0);
 
+    // Scale down as it fades slightly
     const scale = 0.5 + 0.5 * ageFactor;
     ctx.scale(scale, scale);
 
     if (scar.type === 'scorch') {
-        ctx.fillStyle = "#1c1917";
+        // Scorch Mark (Explosions/Fire)
+        ctx.fillStyle = "#1c1917"; // Stone-900
         ctx.beginPath();
         ctx.ellipse(0, 0, scar.size, scar.size * 0.7, 0, 0, Math.PI * 2);
         ctx.fill();
 
+        // Inner Char
         ctx.fillStyle = "#000";
         ctx.globalAlpha = 0.3 * ageFactor;
         ctx.beginPath();
@@ -976,9 +1018,12 @@ export function drawScar(ctx, scar) {
         ctx.fill();
 
     } else if (scar.type === 'blood') {
-        ctx.fillStyle = "#7f1d1d";
+        // Blood Splat (Biological)
+        ctx.fillStyle = "#7f1d1d"; // Red-900
         ctx.beginPath();
+        // Main pool
         ctx.arc(0, 0, scar.size * 0.6, 0, Math.PI * 2);
+        // Random blobs
         for (let i = 0; i < 4; i++) {
             const ang = (i / 4) * Math.PI * 2;
             const dist = scar.size * 0.5;
@@ -987,14 +1032,15 @@ export function drawScar(ctx, scar) {
         ctx.fill();
 
     } else if (scar.type === 'slime') {
-        ctx.fillStyle = "#4d7c0f";
+        // Slime Splat (Poison/Nature)
+        ctx.fillStyle = "#4d7c0f"; // Lime-700
         ctx.beginPath();
         ctx.arc(0, 0, scar.size * 0.7, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = "#84cc16";
+        ctx.fillStyle = "#84cc16"; // Lime-500
         ctx.beginPath();
-        ctx.arc(4, -4, scar.size * 0.2, 0, Math.PI * 2);
+        ctx.arc(4, -4, scar.size * 0.2, 0, Math.PI * 2); // highlight
         ctx.fill();
     }
 
@@ -1011,6 +1057,7 @@ export function drawSynergyLink(ctx, x1, y1, x2, y2, color = 'rgba(255,255,255,0
     ctx.lineTo(x2, y2);
     ctx.stroke();
 
+    // Draw "knots"
     ctx.fillStyle = color;
     ctx.beginPath(); ctx.arc(x1, y1, 3, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(x2, y2, 3, 0, Math.PI * 2); ctx.fill();
