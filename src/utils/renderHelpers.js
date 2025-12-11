@@ -7,8 +7,9 @@
 /**
  * Draw path on canvas
  */
+import { PATH_WIDTH, START_POINT_RADIUS, END_POINT_RADIUS } from '../constants/GameConstants';
+
 export function drawPath(ctx, path, canvasWidth, canvasHeight, sceneryType) {
-    const { PATH_WIDTH, START_POINT_RADIUS, END_POINT_RADIUS } = require('../constants/GameConstants');
 
     if (path.length === 0) return;
 

@@ -1,15 +1,18 @@
 {
     "name": "garden-defense",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "type": "module",
     "description": "A tower defense game built with React, Tauri, and WebGPU",
     "scripts": {
         "dev": "vite",
         "build": "vite build",
         "preview": "vite preview",
-        "test": "vitest run",
-        "test:watch": "vitest",
-        "test:e2e": "playwright test",
+        "test": "set NODE_OPTIONS=--max-old-space-size=8192 && vitest run",
+        "test:watch": "set NODE_OPTIONS=--max-old-space-size=8192 && vitest",
+        "test:e2e": "set NODE_OPTIONS=--max-old-space-size=8192 && playwright test",
+        "test:e2e:agent": "set NODE_OPTIONS=--max-old-space-size=8192 && playwright test --reporter=./tests/agent-reporter.js",
+        "test:e2e:changed": "set NODE_OPTIONS=--max-old-space-size=8192 && playwright test --only-changed",
+        "test:e2e:ui": "set NODE_OPTIONS=--max-old-space-size=8192 && playwright test --ui",
         "lint": "eslint .",
         "docs": "node scripts/auto-doc.js",
         "prepare": "husky"

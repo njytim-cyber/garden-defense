@@ -3,6 +3,8 @@
  * Extracted from monolith - no React dependencies, fully testable
  */
 
+import * as GameConstants from '../constants/GameConstants';
+
 /**
  * Calculate distance from point to line segment
  * Used for: path proximity checks, scenery placement, tower placement validation
@@ -71,7 +73,7 @@ export function isValidPlacement(
     coveredGardenQuadrant,
     existingHeroes
 ) {
-    const { PLACEMENT_MARGINS, TOWER_COLLISION_RADIUS, TRAP_COLLISION_RADIUS, TOWER_PATH_MIN_DISTANCE, TRAP_PATH_MAX_DISTANCE } = require('../constants/GameConstants');
+    const { PLACEMENT_MARGINS, TOWER_COLLISION_RADIUS, TRAP_COLLISION_RADIUS, TOWER_PATH_MIN_DISTANCE, TRAP_PATH_MAX_DISTANCE } = GameConstants;
 
     // Edge margins
     if (x < PLACEMENT_MARGINS.x ||
@@ -124,7 +126,7 @@ export function isValidPlacement(
 
     // Stump special feature
     if (mapData.specialFeature && mapData.specialFeature.type === 'stump') {
-        const { STUMP_RADIUS } = require('../constants/GameConstants');
+        const { STUMP_RADIUS } = GameConstants;
         const sx = mapData.specialFeature.x * canvasWidth;
         const sy = mapData.specialFeature.y * canvasHeight;
         if (Math.hypot(x - sx, y - sy) < STUMP_RADIUS) {
@@ -158,7 +160,7 @@ export function isValidPlacement(
  * Calculate damage dealt to enemy (armor/resistance logic)
  */
 export function calculateDamage(projectile, enemy) {
-    const { ARMOR_DAMAGE_REDUCTION, REINFORCED_NINJA_DAMAGE } = require('../constants/GameConstants');
+    const { ARMOR_DAMAGE_REDUCTION, REINFORCED_NINJA_DAMAGE } = GameConstants;
 
     let finalDamage = projectile.damage;
 
@@ -249,7 +251,7 @@ export function generateWaveComposition(waveNumber, balanceData) {
  * Calculate upgrade cost for a tower
  */
 export function getUpgradeCost(baseConfig, level, isParagon) {
-    const { UPGRADE_COST_MULTIPLIER } = require('../constants/GameConstants');
+    const { UPGRADE_COST_MULTIPLIER } = GameConstants;
     if (isParagon) return 999999; // Cannot upgrade Paragon
     return Math.floor(baseConfig.cost * UPGRADE_COST_MULTIPLIER * level);
 }
@@ -258,6 +260,6 @@ export function getUpgradeCost(baseConfig, level, isParagon) {
  * Calculate sell value for a tower
  */
 export function getSellValue(totalInvestment) {
-    const { SELL_VALUE_MULTIPLIER } = require('../constants/GameConstants');
+    const { SELL_VALUE_MULTIPLIER } = GameConstants;
     return Math.floor(totalInvestment * SELL_VALUE_MULTIPLIER);
 }

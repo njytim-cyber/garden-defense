@@ -1,0 +1,38 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [chromium] ΓÇ║ tests\e2e\bug_repro_spawn.spec.js:31:5 ΓÇ║ Bug Reproduction: Enemy Spawning ΓÇ║ should spawn enemies when wave starts
+[1A[2K  1) [chromium] ΓÇ║ tests\e2e\bug_repro_spawn.spec.js:31:5 ΓÇ║ Bug Reproduction: Enemy Spawning ΓÇ║ should spawn enemies when wave starts 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('button').filter({ hasText: 'MEDIUM' })
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('button').filter({ hasText: 'MEDIUM' })[22m
+
+
+      22 |         // Select Difficulty
+      23 |         const mediumButton = page.locator('button').filter({ hasText: 'MEDIUM' });
+    > 24 |         await expect(mediumButton).toBeVisible();
+         |                                    ^
+      25 |         await mediumButton.click();
+      26 |
+      27 |         // Verify canvas loaded
+        at C:\Users\njyti\Desktop\Google-Antigravity\garden-defense\tests\e2e\bug_repro_spawn.spec.js:24:36
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    test-results\bug_repro_spawn-Bug-Reprod-97ad1-wn-enemies-when-wave-starts-chromium\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: test-results\bug_repro_spawn-Bug-Reprod-97ad1-wn-enemies-when-wave-starts-chromium\error-context.md
+
+
+[1A[2K  1 failed
+    [chromium] ΓÇ║ tests\e2e\bug_repro_spawn.spec.js:31:5 ΓÇ║ Bug Reproduction: Enemy Spawning ΓÇ║ should spawn enemies when wave starts 
+
+[36m  Serving HTML report at http://localhost:51902. Press Ctrl+C to quit.[39m

@@ -1,0 +1,24 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [chromium] ΓÇ║ tests\e2e\bug_repro_spawn.spec.js:30:5 ΓÇ║ Bug Reproduction: Enemy Spawning ΓÇ║ should spawn enemies when wave starts
+[1A[2K  1) [chromium] ΓÇ║ tests\e2e\bug_repro_spawn.spec.js:30:5 ΓÇ║ Bug Reproduction: Enemy Spawning ΓÇ║ should spawn enemies when wave starts 
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: page.waitForTimeout: Target page, context or browser has been closed
+
+      35 |
+      36 |         // Wait for spawn delay (40 frames @ 60fps ~= 666ms) + buffer
+    > 37 |         await page.waitForTimeout(1000);
+         |                    ^
+      38 |
+      39 |         // Check for enemy presence in internal game state via window object or verify canvas visual change
+      40 |         // Since we can't easily check canvas pixels, we'll check the HUD or side effects
+        at C:\Users\njyti\Desktop\Google-Antigravity\garden-defense\tests\e2e\bug_repro_spawn.spec.js:37:20
+
+
+[1A[2K  1 failed
+    [chromium] ΓÇ║ tests\e2e\bug_repro_spawn.spec.js:30:5 ΓÇ║ Bug Reproduction: Enemy Spawning ΓÇ║ should spawn enemies when wave starts 
+
+[36m  Serving HTML report at http://localhost:54681. Press Ctrl+C to quit.[39m

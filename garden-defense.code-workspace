@@ -7,5 +7,19 @@
 			"path": "../_agent-library"
 		}
 	],
-	"settings": {}
+	"settings": {
+		"chat.command.autoRun": {
+			"patterns": [
+				"^npx playwright test.*",
+				"^npm run .*"
+			],
+			"enabled": true
+		},
+		"terminal.integrated.allowChords": false,
+		"agent.terminal.allowlist": [
+			"npx playwright test.*",
+			"npm (test|run|install).*",
+			"git .*"
+		]
+	}
 }

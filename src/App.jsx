@@ -5,8 +5,10 @@ import MapSelectionView from './views/MapSelectionView';
 import DifficultySelectionView from './views/DifficultySelectionView';
 import ShopView from './views/ShopView';
 import CompendiumView from './views/CompendiumView';
+import SkinShopView from './views/SkinShopView';
 import GameEngineContainer from './containers/GameEngineContainer';
 import BALANCE_DATA from './data/balance.json';
+import { MAPS } from './data/maps';
 import { loadGame, saveGame } from './utils/persistence';
 
 function App() {
@@ -73,7 +75,7 @@ function App() {
                 <MainMenuView
                     onPlayClick={() => setScreen('maps')}
                     onShopClick={() => setScreen('shop')}
-                    onSkinsClick={() => alert('Skins shop coming soon!')}
+                    onSkinsClick={() => setScreen('skins')}
                     onGuideClick={() => setScreen('compendium')}
                 />
             )}
@@ -101,6 +103,10 @@ function App() {
                 />
             )}
 
+            {screen === 'skins' && (
+                <SkinShopView onBack={() => setScreen('menu')} />
+            )}
+
             {screen === 'compendium' && (
                 <CompendiumView onBack={() => setScreen('menu')} />
             )}
@@ -108,6 +114,7 @@ function App() {
             {screen === 'game' && selectedMap && selectedDifficulty && (
                 <GameEngineContainer
                     mapKey={selectedMap}
+                    mapData={MAPS[selectedMap]}
                     difficulty={selectedDifficulty}
                     towers={towers}
                     onMenuClick={() => setScreen('menu')}

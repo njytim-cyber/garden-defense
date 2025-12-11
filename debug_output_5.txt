@@ -1,0 +1,40 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [chromium] ΓÇ║ tests\e2e\bug_repro_spawn.spec.js:30:5 ΓÇ║ Bug Reproduction: Enemy Spawning ΓÇ║ should spawn enemies when wave starts
+[1A[2K  1) [chromium] ΓÇ║ tests\e2e\bug_repro_spawn.spec.js:30:5 ΓÇ║ Bug Reproduction: Enemy Spawning ΓÇ║ should spawn enemies when wave starts 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: locator('button').filter({ hasText: 'GARDEN' })
+    Expected: visible
+    Error: strict mode violation: locator('button').filter({ hasText: 'GARDEN' }) resolved to 3 elements:
+        1) <button class="map-card flex flex-col items-center justify-center rounded-xl border-4 overflow-hidden aspect-square transition-all hover:scale-105 hover:border-yellow-500 shadow-lg">ΓÇª</button> aka getByRole('button', { name: '≡ƒî┐ GARDEN Classic' })
+        2) <button class="map-card flex flex-col items-center justify-center rounded-xl border-4 overflow-hidden aspect-square transition-all hover:scale-105 hover:border-yellow-500 shadow-lg">ΓÇª</button> aka getByRole('button', { name: '≡ƒ¢û COVERED GARDEN Shifting' })
+        3) <button class="map-card flex flex-col items-center justify-center rounded-xl border-4 overflow-hidden aspect-square transition-all hover:scale-105 hover:border-yellow-500 shadow-lg">ΓÇª</button> aka getByRole('button', { name: 'Γÿ»∩╕Å ZEN GARDEN Classic' })
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 5000ms[22m
+    [2m  - waiting for locator('button').filter({ hasText: 'GARDEN' })[22m
+
+
+      16 |         await page.waitForTimeout(500);
+      17 |         const gardenMap = page.locator('button').filter({ hasText: 'GARDEN' });
+    > 18 |         await expect(gardenMap).toBeVisible();
+         |                                 ^
+      19 |         await gardenMap.click();
+      20 |
+      21 |         // Select Difficulty
+        at C:\Users\njyti\Desktop\Google-Antigravity\garden-defense\tests\e2e\bug_repro_spawn.spec.js:18:33
+
+    attachment #1: screenshot (image/png) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    test-results\bug_repro_spawn-Bug-Reprod-97ad1-wn-enemies-when-wave-starts-chromium\test-failed-1.png
+    ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+
+    Error Context: test-results\bug_repro_spawn-Bug-Reprod-97ad1-wn-enemies-when-wave-starts-chromium\error-context.md
+
+
+[1A[2K  1 failed
+    [chromium] ΓÇ║ tests\e2e\bug_repro_spawn.spec.js:30:5 ΓÇ║ Bug Reproduction: Enemy Spawning ΓÇ║ should spawn enemies when wave starts 
+
+[36m  Serving HTML report at http://localhost:65116. Press Ctrl+C to quit.[39m

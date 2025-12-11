@@ -45,16 +45,24 @@ test.describe('Garden Defense - Core Game Flow', () => {
         await expect(playButton).toBeVisible();
         await playButton.click();
 
-        // Wait for maps to load
-        await page.waitForTimeout(500); // Small wait for map list
+        // Wait for map selection heading to appear
+        await expect(page.getByRole('heading', { name: /SELECT MAP/i })).toBeVisible();
 
         // Select first available map (Garden)
-        const mapButtons = page.getByRole('button');
+        const mapButtons = page.getByRole('button').filter({ hasNotText: /BACK/i });
         const firstMap = mapButtons.first();
         await expect(firstMap).toBeVisible();
         await firstMap.click();
 
-        // Should show difficulty selection or game canvas
+        // Should show difficulty selection screen
+        await expect(page.getByRole('heading', { name: /SELECT DIFFICULTY/i })).toBeVisible();
+
+        // Select MEDIUM difficulty
+        const mediumButton = page.getByRole('button', { name: /MEDIUM/i });
+        await expect(mediumButton).toBeVisible();
+        await mediumButton.click();
+
+        // Should show game canvas
         await expect(page.locator('canvas')).toBeVisible({ timeout: 5000 });
     });
 
@@ -62,20 +70,37 @@ test.describe('Garden Defense - Core Game Flow', () => {
         await page.goto('/');
         await expect(page.locator('body')).toBeVisible();
 
-        // Start game
-        await page.getByRole('button', { name: /PLAY GAME/i }).click();
-        await page.waitForTimeout(500);
+        // Navigate: Menu -> Maps -> Difficulty -> Game
+        const playButton = page.getByRole('button', { name: /PLAY GAME/i });
+        await expect(playButton).toBeVisible();
+        await playButton.click();
 
-        const maps = page.getByRole('button');
-        await maps.first().click();
+        // Wait for maps screen
+        await expect(page.getByRole('heading', { name: /SELECT MAP/i })).toBeVisible();
 
-        // Verify game elements
-        const canvas = page.locator('#gameCanvas');
+        // Select first map
+        const mapButtons = page.getByRole('button').filter({ hasNotText: /BACK/i });
+        const firstMap = mapButtons.first();
+        await expect(firstMap).toBeVisible();
+        await firstMap.click();
+
+        // Wait for difficulty screen
+        await expect(page.getByRole('heading', { name: /SELECT DIFFICULTY/i })).toBeVisible();
+
+        // Select EASY difficulty
+        const easyButton = page.getByRole('button', { name: /EASY/i });
+        await expect(easyButton).toBeVisible();
+        await easyButton.click();
+
+        // Verify game canvas loads
+        const canvas = page.locator('canvas');
         await expect(canvas).toBeVisible({ timeout: 5000 });
 
-        // Check for HUD elements (lives, money, wave)
-        await expect(page.locator('#livesDisplay')).toBeVisible();
-        await expect(page.locator('#moneyDisplay')).toBeVisible();
-        await expect(page.locator('#waveDisplay')).toBeVisible();
+        // Check for HUD elements (lives display with heart emoji)
+        await expect(page.getByText('❤️')).toBeVisible();
+        await expect(page.getByText('💰')).toBeVisible();
+
+        // Check for wave control button
+        await expect(page.getByRole('button', { name: /START WAVE/i })).toBeVisible();
     });
 });
