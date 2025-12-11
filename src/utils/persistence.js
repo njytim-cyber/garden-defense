@@ -10,10 +10,11 @@ import { SAVE_KEY } from '../constants/GameConstants';
  * @param {number} metaMoney - Persistent gold currency
  * @param {Object} towers - Tower unlock/quantity state
  */
-export function saveGame(metaMoney, towers) {
+export function saveGame(metaMoney, towers, xp = 0) {
     const data = {
         metaMoney: metaMoney,
-        towers: {}
+        towers: {},
+        xp: xp
     };
 
     for (const [key, val] of Object.entries(towers)) {
@@ -32,11 +33,12 @@ export function saveGame(metaMoney, towers) {
 /**
  * Load game state from localStorage
  * @param {Object} towers - Tower config object to update
- * @returns {number} metaMoney - Loaded gold amount
+ * @returns {Object} { metaMoney, xp }
  */
 export function loadGame(towers) {
     const saved = localStorage.getItem(SAVE_KEY);
     let metaMoney = 1000; // Default starting gold
+    let xp = 0;
 
     if (saved) {
         try {
@@ -44,6 +46,9 @@ export function loadGame(towers) {
 
             if (data.metaMoney !== undefined) {
                 metaMoney = data.metaMoney;
+            }
+            if (data.xp !== undefined) {
+                xp = data.xp;
             }
 
             if (data.towers) {
@@ -61,7 +66,7 @@ export function loadGame(towers) {
         }
     }
 
-    return metaMoney;
+    return { metaMoney, xp };
 }
 
 /**

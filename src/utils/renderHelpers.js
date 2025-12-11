@@ -281,9 +281,22 @@ export function drawTower(ctx, tower, assetLoader = null, target = null) {
     // Try to load asset
     const asset = assetLoader?.getTowerAsset(type);
 
+    // Calculate pop animation scale
+    let scale = 1;
+    if (tower.createdAt) {
+        const age = Date.now() - tower.createdAt;
+        if (age < 400) {
+            const t = age / 400; // 400ms duration
+            // Ease out elastic: overshoot slightly
+            scale = t < 0.5 ? 2 * t * t : 1 + Math.sin((t - 0.5) * Math.PI * 2) * 0.1 * (1 - t) * 2;
+            if (scale < 0) scale = 0;
+        }
+    }
+
     if (asset) {
         // Render SVG asset with rotation
-        const size = 60 + level * 3;
+        const baseSize = 60 + level * 3;
+        const size = baseSize * scale;
 
         ctx.save();
         ctx.translate(x, y);
@@ -371,6 +384,21 @@ export function drawEnemy(ctx, enemy, assetLoader = null) {
         ctx.globalAlpha = 0.3;
     }
 
+    // Status Effects Visuals
+    if (enemy.frozen > 0) {
+        ctx.shadowColor = '#06b6d4'; // Cyan glow
+        ctx.shadowBlur = 10;
+        ctx.filter = 'brightness(1.2) hue-rotate(180deg)'; // Tint blue
+    } else if (enemy.burning > 0) {
+        ctx.shadowColor = '#f97316'; // Orange glow
+        ctx.shadowBlur = 10;
+        ctx.filter = 'sepia(1) saturate(5) hue-rotate(-30deg)'; // Tint orange
+    } else if (enemy.poisoned > 0) {
+        ctx.shadowColor = '#22c55e'; // Green glow
+        ctx.shadowBlur = 10;
+        ctx.filter = 'sepia(1) saturate(3) hue-rotate(80deg)'; // Tint green
+    }
+
     // Hit flash effect (white brightness when recently hit)
     const isFlashing = enemy.hitFlash && enemy.hitFlash > 0;
     if (isFlashing) {
@@ -435,6 +463,19 @@ export function drawEnemy(ctx, enemy, assetLoader = null) {
         ctx.beginPath();
         ctx.arc(x, y, radius, 0, Math.PI * 2);
         ctx.stroke();
+    }
+
+    // Draw status effect icons overlay
+    if (enemy.frozen > 0) {
+        ctx.fillStyle = '#06b6d4';
+        ctx.beginPath();
+        drawStar(ctx, x + radius, y - radius, 4, 6, 3, '#06b6d4'); // Ice crystal
+        ctx.fill();
+    }
+    if (enemy.burning > 0) {
+        ctx.font = '12px Arial';
+        ctx.fillStyle = '#f97316';
+        ctx.fillText('🔥', x - radius, y - radius);
     }
 
     // Restore flash filter before drawing health bar
@@ -949,4 +990,76 @@ export function drawFloatingText(ctx, text, x, y, alpha, color = '#fff') {
     ctx.strokeText(text, x, y);
     ctx.fillText(text, x, y);
     ctx.globalAlpha = 1;
+}
+
+export function drawScar(ctx, scar) {
+    ctx.save();
+    const ageFactor = scar.life / 600; // 0 to 1
+    ctx.globalAlpha = Math.min(scar.opacity, ageFactor);
+    ctx.translate(scar.x, scar.y);
+    ctx.rotate(scar.rotation || 0);
+
+    // Scale down as it fades slightly
+    const scale = 0.5 + 0.5 * ageFactor;
+    ctx.scale(scale, scale);
+
+    if (scar.type === 'scorch') {
+        // Scorch Mark (Explosions/Fire)
+        ctx.fillStyle = "#1c1917"; // Stone-900
+        ctx.beginPath();
+        ctx.ellipse(0, 0, scar.size, scar.size * 0.7, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Inner Char
+        ctx.fillStyle = "#000";
+        ctx.globalAlpha = 0.3 * ageFactor;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, scar.size * 0.6, scar.size * 0.4, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+    } else if (scar.type === 'blood') {
+        // Blood Splat (Biological)
+        ctx.fillStyle = "#7f1d1d"; // Red-900
+        ctx.beginPath();
+        // Main pool
+        ctx.arc(0, 0, scar.size * 0.6, 0, Math.PI * 2);
+        // Random blobs
+        for (let i = 0; i < 4; i++) {
+            const ang = (i / 4) * Math.PI * 2;
+            const dist = scar.size * 0.5;
+            ctx.arc(Math.cos(ang) * dist, Math.sin(ang) * dist, scar.size * 0.3, 0, Math.PI * 2);
+        }
+        ctx.fill();
+
+    } else if (scar.type === 'slime') {
+        // Slime Splat (Poison/Nature)
+        ctx.fillStyle = "#4d7c0f"; // Lime-700
+        ctx.beginPath();
+        ctx.arc(0, 0, scar.size * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#84cc16"; // Lime-500
+        ctx.beginPath();
+        ctx.arc(4, -4, scar.size * 0.2, 0, Math.PI * 2); // highlight
+        ctx.fill();
+    }
+
+    ctx.restore();
+}
+
+export function drawSynergyLink(ctx, x1, y1, x2, y2, color = 'rgba(255,255,255,0.15)') {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+
+    // Draw "knots"
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x1, y1, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x2, y2, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
 }

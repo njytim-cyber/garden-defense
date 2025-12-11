@@ -18,7 +18,8 @@ export default function WaveHUDView({
     onStartWave,
     onPauseToggle,
     onSpeedToggle,
-    onMenuClick
+    onMenuClick,
+    isMoneyShaking // New prop
 }) {
     const [displayMoney, setDisplayMoney] = useState(money);
     const [isFlashing, setIsFlashing] = useState(false);
@@ -72,9 +73,17 @@ export default function WaveHUDView({
                     </div>
 
                     {/* Money - with lerp animation and flash effect */}
-                    <div className={`flex items-center gap-1.5 bg-slate-900/90 px-3 py-1.5 rounded-lg border border-yellow-500/30 shadow-md transition-all duration-100 ${isFlashing ? 'scale-110 brightness-150' : ''}`}>
-                        <CoinIcon className="w-5 h-5" />
-                        <span className={`text-lg font-bold transition-colors ${isFlashing ? 'text-white' : 'text-yellow-400'}`}>
+                    <style>{`
+                        @keyframes shake {
+                            0%, 100% { transform: translateX(0); }
+                            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                            20%, 40%, 60%, 80% { transform: translateX(5px); }
+                        }
+                        .animate-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+                    `}</style>
+                    <div className={`flex items-center gap-1.5 bg-slate-900/90 px-3 py-1.5 rounded-lg border border-yellow-500/30 shadow-md transition-all duration-100 ${isFlashing ? 'scale-110 brightness-150' : ''} ${isMoneyShaking ? 'animate-shake border-red-500 bg-red-900/20' : ''}`}>
+                        <CoinIcon className={`w-5 h-5 ${isMoneyShaking ? 'text-red-400' : ''}`} />
+                        <span className={`text-lg font-bold transition-colors ${isFlashing ? 'text-white' : (isMoneyShaking ? 'text-red-400' : 'text-yellow-400')}`}>
                             {displayMoney}
                         </span>
                     </div>
@@ -161,5 +170,6 @@ WaveHUDView.propTypes = {
     onStartWave: PropTypes.func.isRequired,
     onPauseToggle: PropTypes.func,
     onSpeedToggle: PropTypes.func,
-    onMenuClick: PropTypes.func
+    onMenuClick: PropTypes.func,
+    isMoneyShaking: PropTypes.bool
 };

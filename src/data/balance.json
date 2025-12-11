@@ -5,15 +5,21 @@
         "difficulties": {
             "easy": {
                 "startMoney": 150,
-                "speedMultiplier": 1.0
+                "speedMultiplier": 1.0,
+                "goldMultiplier": 1.2,
+                "xpMultiplier": 0.8
             },
             "medium": {
                 "startMoney": 100,
-                "speedMultiplier": 1.0
+                "speedMultiplier": 1.0,
+                "goldMultiplier": 1.0,
+                "xpMultiplier": 1.0
             },
             "hard": {
                 "startMoney": 100,
-                "speedMultiplier": 1.1
+                "speedMultiplier": 1.1,
+                "goldMultiplier": 0.8,
+                "xpMultiplier": 2.0
             }
         }
     },

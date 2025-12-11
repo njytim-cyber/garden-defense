@@ -23,7 +23,9 @@ import {
     drawRangeIndicator,
     drawScenery,
     drawTowerRange,
-    drawFloatingText
+    drawFloatingText,
+    drawScar,
+    drawSynergyLink
 } from '../utils/renderHelpers';
 import { isValidPlacement, generateWaveComposition, calculateDamage } from '../utils/gameLogic';
 import assetLoader from '../utils/AssetLoader';
@@ -37,7 +39,8 @@ export default function GameEngineContainer({
     difficulty,
     towers: shopTowers,
     onMenuClick,
-    onGameOver
+    onGameOver,
+    onGainXp // New prop
 }) {
     const canvasRef = useRef(null);
     const ctxRef = useRef(null);
@@ -66,6 +69,8 @@ export default function GameEngineContainer({
     const [selectedTower, setSelectedTower] = useState(null);
     const [paragonMode, setParagonMode] = useState(false);
     const [selectedForParagon, setSelectedForParagon] = useState([]);
+    const [moneyShaking, setMoneyShaking] = useState(false); // HUD feedback
+    const [showWaveOverlay, setShowWaveOverlay] = useState(false); // New state for wave overlay
 
     const entitiesRef = useRef({
         towers: [],
@@ -73,6 +78,8 @@ export default function GameEngineContainer({
         projectiles: [],
         soldiers: [], // For barracks
         coins: [],
+        particles: [],
+        scars: [], // Battle scars (decals)
         floatingTexts: [] // Damage numbers
     });
 
@@ -146,8 +153,23 @@ export default function GameEngineContainer({
             0
         );
 
+        // Check if in Trash Zone (bottom 15%)
+        const isTrashZone = y > (canvasRef.current ? canvasRef.current.height * 0.85 : 600);
+        if (!isTrashZone && money < towerConfig.cost) {
+            setMoneyShaking(true);
+            setTimeout(() => setMoneyShaking(false), 500);
+            return; // Fail silently (or shake HUD)
+        }
+
+        if (isTrashZone) {
+            // Cancel placement
+            setSelectedTowerType(null);
+            return;
+        }
+
         if (validation.valid) {
             const newTower = createTower(x, y, selectedTowerType, towerConfig);
+            newTower.createdAt = Date.now(); // For pop animation
 
             // Handle traps (consumable)
             if (towerConfig.isTrap && shopTowers[selectedTowerType].quantity > 0) {
@@ -232,6 +254,28 @@ export default function GameEngineContainer({
         });
     }, []);
 
+    // Fast Forward (Hold Space)
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.code === 'Space' && !e.repeat) {
+                setGameSpeed(2);
+                e.preventDefault();
+            }
+        };
+        const handleKeyUp = (e) => {
+            if (e.code === 'Space') {
+                setGameSpeed(1);
+                e.preventDefault();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, []);
+
     // Game loop
     useEffect(() => {
         if (!ctxRef.current || !canvasRef.current) return;
@@ -280,6 +324,13 @@ export default function GameEngineContainer({
                 mapData.paths.forEach(path => {
                     drawPath(ctx, path, canvas.width, canvas.height, mapData.sceneryType || 'default', assetLoader);
                 });
+
+                // DRAW BATTLE SCARS (Decals on path)
+                if (entities.scars) {
+                    entities.scars.forEach(scar => drawScar(ctx, scar));
+                }
+
+                // (Incoming Wave Indicators moved to end for overlay)
 
                 // If paused, only draw entities (no updates) then continue loop
                 if (isPaused) {
@@ -348,7 +399,48 @@ export default function GameEngineContainer({
 
                         // Check if dead
                         if (enemy.health <= 0) {
-                            setMoney(prev => prev + enemy.bounty);
+                            // Difficulty Multiplier
+                            const goldMult = difficultyData.goldMultiplier || 1.0;
+                            const bounty = Math.floor(enemy.bounty * goldMult);
+                            setMoney(prev => prev + bounty);
+
+                            // Award XP
+                            if (onGainXp) {
+                                const xpMult = difficultyData.xpMultiplier || 1.0;
+                                const xpAmount = Math.max(1, Math.floor(enemy.bounty * 0.5 * xpMult));
+                                onGainXp(xpAmount);
+                            }
+
+                            // Spawn Battle Scar
+                            if (!entities.scars) entities.scars = [];
+                            if (entities.scars.length < 50) { // Limit decals
+                                const isMech = ['mech', 'tank', 'drone', 'cyborg'].some(t => enemy.type.includes(t));
+                                const isPois = ['slime', 'poison'].some(t => enemy.type.includes(t));
+                                entities.scars.push({
+                                    x: enemy.x,
+                                    y: enemy.y,
+                                    rotation: Math.random() * Math.PI * 2,
+                                    size: enemy.radius * (1.5 + Math.random()),
+                                    type: isMech ? 'scorch' : (isPois ? 'slime' : 'blood'),
+                                    opacity: 0.6 + Math.random() * 0.4,
+                                    life: 600 // 10 seconds at 60fps
+                                });
+                            }
+
+                            // Spawn Coin Particles
+                            if (!entities.particles) entities.particles = [];
+                            const particleCount = Math.min(5, Math.ceil(bounty / 5));
+                            for (let i = 0; i < particleCount; i++) {
+                                entities.particles.push({
+                                    x: enemy.x,
+                                    y: enemy.y,
+                                    vx: (Math.random() - 0.5) * 10,
+                                    vy: (Math.random() - 0.5) * 10,
+                                    size: 4 + Math.random() * 2,
+                                    life: 0 // age
+                                });
+                            }
+
                             return false;
                         }
 
@@ -431,6 +523,15 @@ export default function GameEngineContainer({
 
                         // Draw tower with rotation toward target
                         drawTower(ctx, tower, assetLoader, currentTarget);
+
+                        // SYNERGY LINES (Barracks -> Soldiers)
+                        if (tower.config.effect === 'barracks') {
+                            entities.soldiers
+                                .filter(s => s.barracksId === tower.x + '_' + tower.y)
+                                .forEach(s => {
+                                    drawSynergyLink(ctx, tower.x, tower.y, s.x, s.y, 'rgba(255, 255, 255, 0.1)');
+                                });
+                        }
                     });
 
                     // Draw range circle for selected tower
@@ -545,6 +646,55 @@ export default function GameEngineContainer({
                     });
 
                     // Update and draw floating texts
+                    if (entities.particles) {
+                        entities.particles = entities.particles.filter(p => {
+                            // Target: Top Left UI (Gold Icon approx)
+                            const targetX = 120; // HUD Gold X
+                            const targetY = 30;  // HUD Gold Y
+
+                            const dx = targetX - p.x;
+                            const dy = targetY - p.y;
+                            const dist = Math.hypot(dx, dy);
+
+                            if (dist < 20) return false; // Arrived
+
+                            // Accelerate towards target
+                            p.vx += dx * 0.005;
+                            p.vy += dy * 0.005;
+                            p.vx *= 0.9; // friction
+                            p.vy *= 0.9;
+
+                            // Move directly if close
+                            if (dist < 100) {
+                                p.x += dx * 0.2;
+                                p.y += dy * 0.2;
+                            } else {
+                                p.x += p.vx;
+                                p.y += p.vy;
+                            }
+
+                            // Draw Coin
+                            ctx.fillStyle = "#fbbf24"; // Amber-400
+                            ctx.strokeStyle = "#b45309";
+                            ctx.lineWidth = 1;
+                            ctx.beginPath();
+                            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                            ctx.fill();
+                            ctx.stroke();
+
+                            return true;
+                        });
+                    }
+
+                    // Update Scars
+                    if (entities.scars) {
+                        entities.scars = entities.scars.filter(scar => {
+                            scar.life--;
+                            return scar.life > 0;
+                        });
+                    }
+
+                    // Update and draw floating texts
                     entities.floatingTexts = entities.floatingTexts.filter(ft => {
                         ft.y -= 0.5; // Float up
                         ft.life--;
@@ -602,6 +752,46 @@ export default function GameEngineContainer({
                             ctx.fillStyle = "white";
                             ctx.textAlign = "center";
                             ctx.fillText("CANCEL", mx, my + 55);
+                            ctx.restore();
+                        }
+                    }
+
+                    // DRAW INCOMING WAVE OVERLAY (After placement to be on top)
+                    if (!isWaveActive && !isPaused && waveNumber < 100) {
+                        const nextWave = generateWaveComposition(waveNumber, BALANCE_DATA);
+                        const uniqueTypes = [...new Set(nextWave)];
+                        const startNode = mapData.paths[0][0];
+                        if (startNode) {
+                            const sx = startNode.x * canvas.width;
+                            const sy = startNode.y * canvas.height;
+                            const floatOffset = Math.sin(Date.now() * 0.005) * 5;
+
+                            ctx.save();
+                            // Label
+                            ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+                            ctx.font = "bold 10px monospace";
+                            ctx.textAlign = "center";
+                            ctx.shadowColor = "black";
+                            ctx.shadowBlur = 4;
+                            // Move UP significantly (-70) to clear castle
+                            ctx.fillText("INCOMING", sx, sy - 70 + floatOffset);
+
+                            // Icons
+                            const iconSize = 24;
+                            const totalWidth = uniqueTypes.slice(0, 3).length * (iconSize + 4);
+                            const startX = sx - totalWidth / 2 + iconSize / 2;
+
+                            uniqueTypes.slice(0, 3).forEach((type, i) => {
+                                const asset = assetLoader?.getEnemyAsset(type);
+                                const dx = startX + i * (iconSize + 4);
+                                const dy = sy - 50 + floatOffset;
+                                if (asset) {
+                                    ctx.drawImage(asset, dx - iconSize / 2, dy, iconSize, iconSize);
+                                } else {
+                                    ctx.fillStyle = '#ef4444';
+                                    ctx.beginPath(); ctx.arc(dx, dy + 10, 6, 0, Math.PI * 2); ctx.fill();
+                                }
+                            });
                             ctx.restore();
                         }
                     }
@@ -673,6 +863,7 @@ export default function GameEngineContainer({
                 onPauseToggle={handlePauseToggle}
                 onSpeedToggle={handleSpeedToggle}
                 onMenuClick={onMenuClick}
+                isMoneyShaking={moneyShaking}
             />
 
             <TowerPanelView

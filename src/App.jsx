@@ -15,15 +15,18 @@ function App() {
     const [screen, setScreen] = useState('menu');
     const [selectedMap, setSelectedMap] = useState(null);
     const [selectedDifficulty, setSelectedDifficulty] = useState(null);
-    const [metaMoney, setMetaMoney] = useState(1000);
-    const [towers, setTowers] = useState(() => {
-        // Deep clone towers from balance data
-        const towersCopy = JSON.parse(JSON.stringify(BALANCE_DATA.towers));
-        // Load saved state
-        const loadedMoney = loadGame(towersCopy);
-        setMetaMoney(loadedMoney);
-        return towersCopy;
+
+
+    // Initialize state from storage
+    const [initialState] = useState(() => {
+        const t = JSON.parse(JSON.stringify(BALANCE_DATA.towers));
+        const { metaMoney, xp } = loadGame(t);
+        return { towers: t, metaMoney, xp: xp || 0 };
     });
+
+    const [metaMoney, setMetaMoney] = useState(initialState.metaMoney);
+    const [xp, setXp] = useState(initialState.xp);
+    const [towers, setTowers] = useState(initialState.towers);
 
     // Shop items (towers with shopPrice)
     const shopItems = Object.entries(towers)
@@ -50,8 +53,15 @@ function App() {
             }
 
             setTowers(newTowers);
-            saveGame(metaMoney - item.shopPrice, newTowers);
+
+            saveGame(metaMoney - item.shopPrice, newTowers, xp);
         }
+    };
+
+    const handleGainXp = (amount) => {
+        const newXp = Math.floor(xp + amount);
+        setXp(newXp);
+        saveGame(metaMoney, towers, newXp);
     };
 
     const handleMapSelect = (mapKey) => {
@@ -77,6 +87,8 @@ function App() {
                     onShopClick={() => setScreen('shop')}
                     onSkinsClick={() => setScreen('skins')}
                     onGuideClick={() => setScreen('compendium')}
+
+                    xp={xp}
                 />
             )}
 
@@ -119,7 +131,9 @@ function App() {
                     difficulty={selectedDifficulty}
                     towers={towers}
                     onMenuClick={() => setScreen('menu')}
+
                     onGameOver={handleGameOver}
+                    onGainXp={handleGainXp}
                 />
             )}
         </div>

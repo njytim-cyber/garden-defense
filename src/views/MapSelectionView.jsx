@@ -75,8 +75,18 @@ export default function MapSelectionView({ onMapSelect, onBack }) {
                 </div>
 
                 {/* Map Grid */}
-                <div className="overflow-y-auto flex-grow -mr-4 pr-4 custom-scrollbar p-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 pb-10 pt-2">
+                <style>{`
+                    .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+                    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; }
+                    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+                    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.5); }
+                    .gradient-mask {
+                        mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+                        -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+                    }
+                `}</style>
+                <div className="overflow-y-auto flex-grow -mr-4 pr-4 custom-scrollbar gradient-mask p-4 pb-[120px]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 pt-2">
                         {activeMaps.map((map, index) => {
                             const progress = getMapProgress(map.key);
                             const isNew = index === 0 && activeWorldId === 'greenlands'; // Mock 'New' badge
