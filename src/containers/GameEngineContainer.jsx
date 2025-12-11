@@ -89,6 +89,7 @@ export default function GameEngineContainer({
     const spawnQueueRef = useRef([]);
     const spawnTimerRef = useRef(0);
     const decorationsRef = useRef(null);
+    const waveIndicatorOpacityRef = useRef(0); // Smooth fade for wave indicator
 
     const handleCanvasReady = useCallback((canvas, ctx) => {
         canvasRef.current = canvas;
