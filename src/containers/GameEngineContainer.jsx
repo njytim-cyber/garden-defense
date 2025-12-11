@@ -757,8 +757,18 @@ export default function GameEngineContainer({
                         }
                     }
 
-                    // DRAW INCOMING WAVE OVERLAY (After placement to be on top)
-                    if (!isWaveActive && !isPaused && waveNumber < 100) {
+                    // DRAW INCOMING WAVE OVERLAY (Smooth fade to avoid blinking)
+                    const shouldShowIndicator = !isWaveActive && !isPaused && waveNumber < 100;
+
+                    // Smooth fade in/out (0.015 ~= fade over 300ms at 60fps)
+                    if (shouldShowIndicator) {
+                        waveIndicatorOpacityRef.current = Math.min(1, waveIndicatorOpacityRef.current + 0.015);
+                    } else {
+                        waveIndicatorOpacityRef.current = Math.max(0, waveIndicatorOpacityRef.current - 0.015);
+                    }
+
+                    // Only draw if visible
+                    if (waveIndicatorOpacityRef.current > 0) {
                         const nextWave = generateWaveComposition(waveNumber, BALANCE_DATA);
                         const uniqueTypes = [...new Set(nextWave)];
                         const startNode = mapData.paths[0][0];
@@ -768,6 +778,8 @@ export default function GameEngineContainer({
                             const floatOffset = Math.sin(Date.now() * 0.005) * 5;
 
                             ctx.save();
+                            ctx.globalAlpha = waveIndicatorOpacityRef.current; // Apply fade
+
                             // Label
                             ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
                             ctx.font = "bold 10px monospace";
