@@ -5,6 +5,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
+import { CartIcon, ShirtIcon, BookIcon } from '../components/Icons';
 
 export default function MainMenuView({ onPlayClick, onShopClick, onSkinsClick, onGuideClick }) {
     return (
@@ -35,7 +36,7 @@ export default function MainMenuView({ onPlayClick, onShopClick, onSkinsClick, o
                         onClick={onShopClick}
                         className="flex-1 py-4 rounded-xl flex items-center justify-center gap-2 bg-slate-800 border border-slate-600 hover:bg-slate-700 hover:border-yellow-500/50 transition-all group"
                     >
-                        <span className="text-2xl group-hover:rotate-12 transition-transform">🛒</span>
+                        <CartIcon className="w-6 h-6 group-hover:scale-110 transition-transform" color="#94a3b8" />
                         <span className="text-lg font-bold text-slate-200 group-hover:text-yellow-400">SHOP</span>
                     </button>
 
@@ -43,7 +44,7 @@ export default function MainMenuView({ onPlayClick, onShopClick, onSkinsClick, o
                         onClick={onSkinsClick}
                         className="flex-1 py-4 rounded-xl flex items-center justify-center gap-2 bg-slate-800 border border-slate-600 hover:bg-slate-700 hover:border-pink-500/50 transition-all group"
                     >
-                        <span className="text-2xl group-hover:rotate-12 transition-transform">👕</span>
+                        <ShirtIcon className="w-6 h-6 group-hover:scale-110 transition-transform" color="#94a3b8" />
                         <span className="text-lg font-bold text-slate-200 group-hover:text-pink-400">SKINS</span>
                     </button>
 
@@ -51,7 +52,7 @@ export default function MainMenuView({ onPlayClick, onShopClick, onSkinsClick, o
                         onClick={onGuideClick}
                         className="flex-1 py-4 rounded-xl flex items-center justify-center gap-2 bg-slate-800 border border-slate-600 hover:bg-slate-700 hover:border-cyan-500/50 transition-all group"
                     >
-                        <span className="text-2xl group-hover:-translate-y-1 transition-transform">📖</span>
+                        <BookIcon className="w-6 h-6 group-hover:scale-110 transition-transform" color="#94a3b8" />
                         <span className="text-lg font-bold text-slate-200 group-hover:text-cyan-400">GUIDE</span>
                     </button>
                 </div>

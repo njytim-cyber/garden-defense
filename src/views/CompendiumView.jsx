@@ -6,11 +6,13 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import BALANCE_DATA from '../data/balance.json';
+import assetManifest from '../../assets/asset-manifest.json';
+import { CoinIcon } from '../components/Icons';
 
 export default function CompendiumView({ onBack }) {
     const [activeTab, setActiveTab] = useState('enemies');
 
-    const enemies = Object.values(BALANCE_DATA.enemies);
+    const enemies = Object.entries(BALANCE_DATA.enemies);
     const towers = Object.entries(BALANCE_DATA.towers);
 
     return (
@@ -19,7 +21,7 @@ export default function CompendiumView({ onBack }) {
                 <div className="flex justify-between items-center mb-6 border-b border-slate-700 pb-4 shrink-0">
                     <div className="flex items-center gap-6">
                         <h2 className="text-4xl font-bold text-white flex items-center gap-3">
-                            <span className="text-4xl">📖</span> COMPENDIUM
+                            <img src="/assets/ui/compendium_icon.png" alt="Compendium" className="w-10 h-10 object-contain" /> COMPENDIUM
                         </h2>
                         <div className="flex bg-slate-800 rounded-lg p-1">
                             <button
@@ -52,17 +54,33 @@ export default function CompendiumView({ onBack }) {
 
                 <div className="overflow-y-auto flex-grow pr-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pointer-events-auto">
                     {activeTab === 'enemies' ? (
-                        enemies.map((enemy) => (
+                        enemies.map(([enemyKey, enemy]) => (
                             <div
                                 key={enemy.name}
                                 className="bg-slate-800 rounded-xl p-4 border border-slate-700 flex flex-col gap-3 shadow-md hover:border-cyan-500/50 transition-colors"
                             >
                                 <div className="flex items-center gap-4">
-                                    <div
-                                        className="w-12 h-12 rounded-full border-2 border-slate-600 shadow-inner flex items-center justify-center shrink-0"
-                                        style={{ backgroundColor: enemy.color }}
-                                    >
-                                        {getEnemyIcon(enemy)}
+                                    <div className="w-14 h-14 shrink-0 flex items-center justify-center">
+                                        {assetManifest.enemies[enemyKey] ? (
+                                            <img
+                                                src={`/assets/${assetManifest.enemies[enemyKey]}`}
+                                                alt={enemy.name}
+                                                className="w-full h-full object-contain"
+                                                onError={(e) => {
+                                                    e.target.style.display = 'none';
+                                                    e.target.nextElementSibling.style.display = 'flex';
+                                                }}
+                                            />
+                                        ) : null}
+                                        <div
+                                            className="w-12 h-12 rounded-full border-2 border-slate-600 shadow-inner flex items-center justify-center"
+                                            style={{
+                                                backgroundColor: enemy.color,
+                                                display: assetManifest.enemies[enemyKey] ? 'none' : 'flex'
+                                            }}
+                                        >
+                                            {getEnemyIcon(enemy)}
+                                        </div>
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-lg text-white">{enemy.name}</h3>
@@ -76,8 +94,8 @@ export default function CompendiumView({ onBack }) {
                                     <div className="bg-slate-900 px-2 py-1 rounded">
                                         Speed: <span className="text-white">{enemy.baseSpeed.toFixed(1)}</span>
                                     </div>
-                                    <div className="bg-slate-900 px-2 py-1 rounded">
-                                        Gold: <span className="text-yellow-400">{enemy.bounty}</span>
+                                    <div className="bg-slate-900 px-2 py-1 rounded flex items-center gap-1">
+                                        <CoinIcon className="w-4 h-4" /> <span className="text-yellow-400">{enemy.bounty}</span>
                                     </div>
                                     <div className="bg-slate-900 px-2 py-1 rounded capitalize">
                                         Type: <span className="text-white">{enemy.type}</span>
@@ -92,8 +110,27 @@ export default function CompendiumView({ onBack }) {
                                 className="bg-slate-800 rounded-xl p-4 border border-slate-700 flex flex-col gap-3 shadow-md hover:border-yellow-500/50 transition-colors"
                             >
                                 <div className="flex items-center gap-4">
-                                    <div className="shrink-0">
-                                        {getTowerIcon(key, tower)}
+                                    <div className="w-14 h-14 shrink-0 flex items-center justify-center">
+                                        {assetManifest.towers[key] ? (
+                                            <img
+                                                src={`/assets/${assetManifest.towers[key]}`}
+                                                alt={tower.name}
+                                                className="w-full h-full object-contain"
+                                                onError={(e) => {
+                                                    e.target.style.display = 'none';
+                                                    e.target.nextElementSibling.style.display = 'flex';
+                                                }}
+                                            />
+                                        ) : null}
+                                        <div
+                                            className="w-10 h-10 rounded-full flex items-center justify-center"
+                                            style={{
+                                                backgroundColor: tower.color,
+                                                display: assetManifest.towers[key] ? 'none' : 'flex'
+                                            }}
+                                        >
+                                            {getTowerIcon(key, tower)}
+                                        </div>
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-lg text-white">{tower.name}</h3>

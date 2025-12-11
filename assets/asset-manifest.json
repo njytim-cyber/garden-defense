@@ -1,8 +1,64 @@
 {
-    "defaults": {
-        "project_id": "YOUR_VERTEX_AI_PROJECT_ID",
-        "location": "us-central1",
-        "model": "imagen-3.0-generate-001"
+    "towers": {
+        "basic": "towers/tower_basic_1765455502995.png",
+        "barracks": "towers/tower_barracks_1765455519774.png",
+        "sniper": "towers/tower_sniper_1765455537460.png",
+        "rapid": "towers/tower_rapid_1765455558998.png",
+        "fire": "towers/tower_fire_1765455575192.png",
+        "ice": "towers/tower_ice_1765455604418.png",
+        "hero": "towers/tower_hero_1765455624758.png",
+        "paladin": "towers/tower_paladin_1765455644751.png",
+        "ninja": "towers/tower_ninja_1765455666209.png",
+        "void": "towers/tower_void_1765455688518.png",
+        "cannon": "towers/tower_cannon_1765455703366.png",
+        "submarine": "towers/tower_submarine_1765455720869.png",
+        "spike": "towers/tower_spike_1765455741896.png",
+        "poison": "towers/tower_poison_1765455761606.png",
+        "bank": "towers/tower_bank_1765455784324.png"
     },
-    "assets": []
+    "enemies": {
+        "guard": "enemies/enemy_guard_1765455844472.png",
+        "basic": "enemies/enemy_basic_1765455862485.png",
+        "goblin": "enemies/enemy_goblin_1765455878640.png",
+        "skeleton": "enemies/enemy_skeleton_1765455898863.png",
+        "bat": "enemies/enemy_bat_1765455916183.png",
+        "orc": "enemies/enemy_orc_1765461754052.png",
+        "bandit": "enemies/enemy_bandit_1765461764010.png",
+        "knight": "enemies/enemy_knight_1765461774126.png",
+        "wizard": "enemies/enemy_wizard_1765461784054.png",
+        "reinforced_mech": "enemies/enemy_reinforced_mech_1765461793956.png",
+        "viking": "enemies/enemy_viking_1765461803310.png",
+        "samurai": "enemies/enemy_samurai_1765461813196.png",
+        "drone": "enemies/enemy_drone_1765461822339.png",
+        "ghost": "enemies/enemy_ghost_1765461832738.png",
+        "troll": "enemies/enemy_troll_1765461844181.png",
+        "ent": "enemies/enemy_ent_1765461854194.png",
+        "sorcerer": "enemies/enemy_sorcerer_1765461881345.png",
+        "shade": "enemies/enemy_shade_1765461897815.png",
+        "slime": "enemies/enemy_slime_1765461908180.png",
+        "cyborg": "enemies/enemy_cyborg_1765461966163.png",
+        "assassin": "enemies/enemy_assassin_1765462028070.png",
+        "mech-rider": "enemies/enemy_mech-rider_1765462086340.png",
+        "king": "enemies/enemy_king_1765462144919.png",
+        "yeti": "enemies/enemy_yeti_1765462394508.png",
+        "magma_golem": "enemies/enemy_magma_golem_1765462412921.png",
+        "tank": "enemies/enemy_tank_1765462456455.png",
+        "mech": "enemies/enemy_mech_1765462525415.png",
+        "boss": "enemies/enemy_boss_1765462575779.png",
+        "emperor": "enemies/enemy_emperor_1765462644942.png",
+        "dark_knight": "enemies/enemy_dark_knight_1765462976559.png",
+        "sneak": "enemies/enemy_sneak_1765463013952.png",
+        "healer": "enemies/enemy_healer_1765463054870.png",
+        "prince": "enemies/enemy_prince_1765463101074.png",
+        "reinforced_ninja": "enemies/enemy_reinforced_ninja_1765463184090.png",
+        "gargoyle": "enemies/enemy_gargoyle_1765463421241.png"
+    },
+    "renderSettings": {
+        "towerSize": 40,
+        "enemySizeMultiplier": 1.8
+    },
+    "waypoints": {
+        "castle": "waypoints/castle_1765464406437.png",
+        "shrine": "waypoints/shrine_1765464430694.png"
+    }
 }

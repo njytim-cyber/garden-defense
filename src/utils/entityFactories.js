@@ -113,6 +113,11 @@ export function updateEnemyStatusEffects(enemy) {
         if (enemy.burnTimer <= 0) enemy.isBurning = false;
     }
 
+    // Hit flash countdown
+    if (enemy.hitFlash && enemy.hitFlash > 0) {
+        enemy.hitFlash--;
+    }
+
     // Void
     if (enemy.isVoided) {
         enemy.voidTimer--;

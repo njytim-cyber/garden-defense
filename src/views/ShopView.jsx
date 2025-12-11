@@ -5,6 +5,8 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
+import assetManifest from '../../assets/asset-manifest.json';
+import { CartIcon, CoinIcon } from '../components/Icons';
 
 export default function ShopView({ items, metaMoney, onBuyItem, onBack }) {
     return (
@@ -12,11 +14,11 @@ export default function ShopView({ items, metaMoney, onBuyItem, onBack }) {
             <div className="w-full max-w-5xl p-8">
                 <div className="flex justify-between items-center mb-8 border-b border-slate-700 pb-4">
                     <h2 className="text-4xl font-bold text-white flex items-center gap-3">
-                        <span className="text-4xl">🛒</span> ITEM SHOP
+                        <CartIcon className="w-10 h-10" color="#94a3b8" /> ITEM SHOP
                     </h2>
                     <div className="flex items-center gap-6">
-                        <div className="text-yellow-400 text-2xl font-mono font-bold bg-slate-800 px-4 py-2 rounded-lg border border-yellow-500/30">
-                            Gold: <span>{metaMoney}</span>
+                        <div className="text-yellow-400 text-2xl font-mono font-bold bg-slate-800 px-4 py-2 rounded-lg border border-yellow-500/30 flex items-center gap-2">
+                            <CoinIcon className="w-6 h-6" /> <span>{metaMoney}</span>
                         </div>
                         <button
                             onClick={onBack}
@@ -61,8 +63,8 @@ export default function ShopView({ items, metaMoney, onBuyItem, onBack }) {
                                             <button
                                                 onClick={() => canAfford && onBuyItem(item.key)}
                                                 className={`w-full h-10 rounded font-bold ${canAfford
-                                                        ? 'bg-yellow-600 hover:bg-yellow-500 text-white'
-                                                        : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                                    ? 'bg-yellow-600 hover:bg-yellow-500 text-white'
+                                                    : 'bg-slate-700 text-slate-500 cursor-not-allowed'
                                                     } transition-colors flex items-center justify-center`}
                                                 disabled={!canAfford}
                                             >
@@ -76,8 +78,8 @@ export default function ShopView({ items, metaMoney, onBuyItem, onBack }) {
                                         <button
                                             onClick={() => canAfford && onBuyItem(item.key)}
                                             className={`w-full h-10 rounded font-bold ${canAfford
-                                                    ? 'bg-yellow-600 hover:bg-yellow-500 text-white'
-                                                    : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                                ? 'bg-yellow-600 hover:bg-yellow-500 text-white'
+                                                : 'bg-slate-700 text-slate-500 cursor-not-allowed'
                                                 } transition-colors flex items-center justify-center`}
                                             disabled={!canAfford}
                                         >
@@ -119,44 +121,30 @@ ShopView.propTypes = {
 };
 
 function getItemIcon(item) {
-    if (item.key === 'bank') {
+    // Try to use generated asset
+    const assetPath = assetManifest.towers[item.key];
+
+    if (assetPath) {
         return (
-            <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl bg-yellow-700 shadow-inner">
-                🏦
+            <div className="w-14 h-14 flex items-center justify-center">
+                <img
+                    src={`/assets/${assetPath}`}
+                    alt={item.name}
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextElementSibling.style.display = 'flex';
+                    }}
+                />
+                <div
+                    className="w-12 h-12 rounded-full shadow-inner flex items-center justify-center"
+                    style={{ backgroundColor: item.color, display: 'none' }}
+                />
             </div>
         );
     }
-    if (item.key === 'ninja') {
-        return (
-            <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl bg-slate-950 border border-slate-600 shadow-inner">
-                🥷
-            </div>
-        );
-    }
-    if (item.key === 'poison') {
-        return (
-            <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl bg-purple-900 shadow-inner">
-                ☠️
-            </div>
-        );
-    }
-    if (item.isTrap) {
-        return (
-            <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl bg-stone-700 shadow-inner">
-                ⚙️
-            </div>
-        );
-    }
-    if (item.waterOnly) {
-        return (
-            <div
-                className="w-12 h-12 rounded-full flex items-center justify-center text-2xl shadow-inner"
-                style={{ backgroundColor: item.color }}
-            >
-                🌊
-            </div>
-        );
-    }
+
+    // Fallback to colored circles
     return (
         <div
             className="w-12 h-12 rounded-full shadow-inner"

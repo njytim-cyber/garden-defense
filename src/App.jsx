@@ -91,6 +91,7 @@ function App() {
                 <DifficultySelectionView
                     onDifficultySelect={handleDifficultySelect}
                     onBack={() => setScreen('maps')}
+                    mapData={MAPS[selectedMap]}
                 />
             )}
 
