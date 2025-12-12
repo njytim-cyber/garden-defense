@@ -31,3 +31,6 @@ npm-debug.log*
 
 # Local Netlify folder
 .netlify
+
+# Public assets (copied from LFS assets for dev server)
+public/assets/
