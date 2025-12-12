@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Garden Defense - Core Game Flow', () => {
+test.describe('Defenders of the Realm - Core Game Flow', () => {
     test('should load main menu with styled UI', async ({ page }) => {
         // PARANOID RULE: Hydration wait
         await page.goto('/');
@@ -20,7 +20,7 @@ test.describe('Garden Defense - Core Game Flow', () => {
         await expect(guideButton).toBeVisible();
 
         // Verify title
-        await expect(page.getByText('GARDEN DEFENSE')).toBeVisible();
+        await expect(page.getByText('DEFENDERS OF THE REALM')).toBeVisible();
     });
 
     test('should navigate to map selection', async ({ page }) => {

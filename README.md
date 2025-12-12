@@ -1,4 +1,4 @@
-# 🌻 Garden Defense
+# ⚔️ Defenders of the Realm
 
 A modern tower defense game built with React 19 and Vite 7, refactored from a 2260-line monolithic HTML file into a clean, data-driven architecture.
 

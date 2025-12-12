@@ -1,4 +1,4 @@
-# Import Guide - Garden Defense React Architecture
+# Import Guide - Defenders of the Realm React Architecture
 
 ## Data Imports
 

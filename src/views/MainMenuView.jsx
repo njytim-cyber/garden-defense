@@ -18,7 +18,7 @@ export default function MainMenuView({ onPlayClick, onShopClick, onSkinsClick, o
                     className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-600 mb-2 drop-shadow-lg tracking-tight"
                     style={{ filter: 'drop-shadow(0 0 10px rgba(34,197,94,0.5))' }}
                 >
-                    GARDEN DEFENSE
+                    DEFENDERS OF THE REALM
                 </h1>
                 <p className="text-2xl text-green-200 font-light tracking-[0.3em] opacity-90 border-t border-green-500/30 pt-2 mt-2 inline-block">
                     PROTECT THE SACRED SHRINE
