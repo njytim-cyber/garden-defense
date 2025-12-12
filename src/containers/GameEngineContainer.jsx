@@ -72,6 +72,7 @@ export default function GameEngineContainer({
     const [moneyShaking, setMoneyShaking] = useState(false); // HUD feedback
     const [showWaveOverlay, setShowWaveOverlay] = useState(false); // New state for wave overlay
     const [towerBarVisible, setTowerBarVisible] = useState(true); // Tower bar visibility toggle
+    const [coveredQuadrant] = useState(() => mapData.isCovered ? Math.floor(Math.random() * 4) : null); // Randomize once at game start
 
     const entitiesRef = useRef({
         towers: [],
@@ -143,6 +144,8 @@ export default function GameEngineContainer({
         if (!towerConfig || money < towerConfig.cost) return;
 
         // Validate placement
+        const heroCount = entitiesRef.current.towers.filter(t => t.config?.isHero).length;
+
         const validation = isValidPlacement(
             x, y,
             towerConfig,
@@ -151,8 +154,8 @@ export default function GameEngineContainer({
             mapData,
             canvasRef.current.width,
             canvasRef.current.height,
-            null,
-            0
+            coveredQuadrant,
+            heroCount
         );
 
         // Check if in Trash Zone (bottom 15%)
@@ -467,7 +470,7 @@ export default function GameEngineContainer({
                         }
 
                         // Barracks: Spawn soldiers
-                        if (tower.config.effect === 'barracks') {
+                        if (tower.config.isBarracks || tower.config.effect === 'barracks') {
                             const maxSoldiers = 3;
                             const currentSoldiers = entities.soldiers.filter(s => s.barracksId === tower.x + '_' + tower.y).length;
 
@@ -532,7 +535,7 @@ export default function GameEngineContainer({
                         drawTower(ctx, tower, assetLoader, currentTarget, gameTime);
 
                         // SYNERGY LINES (Barracks -> Soldiers)
-                        if (tower.config.effect === 'barracks') {
+                        if (tower.config.isBarracks || tower.config.effect === 'barracks') {
                             entities.soldiers
                                 .filter(s => s.barracksId === tower.x + '_' + tower.y)
                                 .forEach(s => {
@@ -719,6 +722,7 @@ export default function GameEngineContainer({
                         const mx = mouseRef.current.x;
                         const my = mouseRef.current.y;
 
+                        const heroCount = entities.towers.filter(t => t.config?.isHero).length;
                         const validation = isValidPlacement(
                             mx, my,
                             towerConfig,
@@ -727,8 +731,8 @@ export default function GameEngineContainer({
                             mapData,
                             canvas.width,
                             canvas.height,
-                            null,
-                            0
+                            coveredQuadrant,
+                            heroCount
                         );
 
                         // Check if in Trash Zone (bottom 15%)

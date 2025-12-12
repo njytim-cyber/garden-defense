@@ -97,7 +97,13 @@ export function isValidPlacement(
     let onPath = false;
     for (let path of pathWaypoints) {
         for (let i = 0; i < path.length - 1; i++) {
-            const dist = pointToSegmentDistance(x, y, path[i].x, path[i].y, path[i + 1].x, path[i + 1].y);
+            // Convert normalized (0-1) coordinates to canvas pixel coordinates
+            const x1 = path[i].x * canvasWidth;
+            const y1 = path[i].y * canvasHeight;
+            const x2 = path[i + 1].x * canvasWidth;
+            const y2 = path[i + 1].y * canvasHeight;
+
+            const dist = pointToSegmentDistance(x, y, x1, y1, x2, y2);
             if (dist < TRAP_PATH_MAX_DISTANCE) onPath = true;
             if (!towerConfig.isTrap && dist < TOWER_PATH_MIN_DISTANCE) {
                 return { valid: false, reason: "Too close to path" };

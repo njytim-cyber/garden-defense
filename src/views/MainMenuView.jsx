@@ -23,7 +23,7 @@ export default function MainMenuView({ onPlayClick, onShopClick, onSkinsClick, o
                 <p className="text-2xl text-green-200 font-light tracking-[0.3em] opacity-90 border-t border-green-500/30 pt-2 mt-2 inline-block">
                     PROTECT THE SACRED SHRINE
                 </p>
-                <p className="text-sm text-green-400/60 font-mono mt-2">v3.0.0</p>
+                <p className="text-sm text-green-400/60 font-mono mt-2">v3.0.1</p>
             </div>
 
             <div className="flex flex-col gap-4 items-center w-full max-w-md pointer-events-auto">
