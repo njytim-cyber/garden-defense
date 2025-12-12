@@ -1,0 +1,110 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e5]:
+  - generic [ref=e6]:
+    - generic [ref=e7]:
+      - heading "CAMPAIGN SELECT" [level=2] [ref=e8]:
+        - generic [ref=e9]: CAMPAIGN
+        - text: SELECT
+      - paragraph [ref=e10]: Choose your battlefield
+    - button "✕ BACK" [ref=e11] [cursor=pointer]
+  - generic [ref=e12]:
+    - button "🌿 The Greenlands" [ref=e13] [cursor=pointer]:
+      - generic [ref=e14]: 🌿
+      - text: The Greenlands
+    - button "🌋 Elemental" [ref=e15] [cursor=pointer]:
+      - generic [ref=e16]: 🌋
+      - text: Elemental
+    - button "🏙️ Civilization" [ref=e17] [cursor=pointer]:
+      - generic [ref=e18]: 🏙️
+      - text: Civilization
+    - button "🔮 The Void" [ref=e19] [cursor=pointer]:
+      - generic [ref=e20]: 🔮
+      - text: The Void
+    - button "🎨 Abstract" [ref=e21] [cursor=pointer]:
+      - generic [ref=e22]: 🎨
+      - text: Abstract
+  - generic [ref=e24]:
+    - button "🌿 Garden ★ ★ ★ Standard Campaign NEW" [ref=e25] [cursor=pointer]:
+      - generic: 🌿
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - heading "Garden" [level=3] [ref=e31]
+          - generic [ref=e32]:
+            - generic [ref=e33]: ★
+            - generic [ref=e34]: ★
+            - generic [ref=e35]: ★
+        - paragraph [ref=e36]: Standard Campaign
+      - generic [ref=e37]: NEW
+    - button "🌴 Rainforest ★ ★ ★ Standard Campaign" [ref=e38] [cursor=pointer]:
+      - generic: 🌴
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - heading "Rainforest" [level=3] [ref=e44]
+          - generic [ref=e45]:
+            - generic [ref=e46]: ★
+            - generic [ref=e47]: ★
+            - generic [ref=e48]: ★
+        - paragraph [ref=e49]: Standard Campaign
+    - button "🪵 The Stump ★ ★ ★ 2x Range Spot" [ref=e50] [cursor=pointer]:
+      - generic: 🪵
+      - generic [ref=e54]:
+        - generic [ref=e55]:
+          - heading "The Stump" [level=3] [ref=e56]
+          - generic [ref=e57]:
+            - generic [ref=e58]: ★
+            - generic [ref=e59]: ★
+            - generic [ref=e60]: ★
+        - paragraph [ref=e61]: 2x Range Spot
+    - button "🌳 Tree Paradise ★ ★ ★ Standard Campaign" [ref=e62] [cursor=pointer]:
+      - generic: 🌳
+      - generic [ref=e66]:
+        - generic [ref=e67]:
+          - heading "Tree Paradise" [level=3] [ref=e68]
+          - generic [ref=e69]:
+            - generic [ref=e70]: ★
+            - generic [ref=e71]: ★
+            - generic [ref=e72]: ★
+        - paragraph [ref=e73]: Standard Campaign
+    - button "🛖 Covered Garden ★ ★ ★ Shifting Glass" [ref=e74] [cursor=pointer]:
+      - generic: 🛖
+      - generic [ref=e78]:
+        - generic [ref=e79]:
+          - heading "Covered Garden" [level=3] [ref=e80]
+          - generic [ref=e81]:
+            - generic [ref=e82]: ★
+            - generic [ref=e83]: ★
+            - generic [ref=e84]: ★
+        - paragraph [ref=e85]: Shifting Glass
+    - button "🐍 Snake Pit ★ ★ ★ Standard Campaign" [ref=e86] [cursor=pointer]:
+      - generic: 🐍
+      - generic [ref=e90]:
+        - generic [ref=e91]:
+          - heading "Snake Pit" [level=3] [ref=e92]
+          - generic [ref=e93]:
+            - generic [ref=e94]: ★
+            - generic [ref=e95]: ★
+            - generic [ref=e96]: ★
+        - paragraph [ref=e97]: Standard Campaign
+    - button "🐝 Beehive ★ ★ ★ Standard Campaign" [ref=e98] [cursor=pointer]:
+      - generic: 🐝
+      - generic [ref=e102]:
+        - generic [ref=e103]:
+          - heading "Beehive" [level=3] [ref=e104]
+          - generic [ref=e105]:
+            - generic [ref=e106]: ★
+            - generic [ref=e107]: ★
+            - generic [ref=e108]: ★
+        - paragraph [ref=e109]: Standard Campaign
+    - button "🔮 Enchanted Grove ★ ★ ★ Multi-Path" [ref=e110] [cursor=pointer]:
+      - generic: 🔮
+      - generic [ref=e114]:
+        - generic [ref=e115]:
+          - heading "Enchanted Grove" [level=3] [ref=e116]
+          - generic [ref=e117]:
+            - generic [ref=e118]: ★
+            - generic [ref=e119]: ★
+            - generic [ref=e120]: ★
+        - paragraph [ref=e121]: Multi-Path
+```

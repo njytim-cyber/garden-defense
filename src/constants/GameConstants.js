@@ -32,7 +32,7 @@ export const TOWER_COLLISION_RADIUS = 40; // Minimum distance between towers
 export const TRAP_COLLISION_RADIUS = 25;  // Minimum distance for traps
 export const PATH_COLLISION_RADIUS = 35;  // Distance from path for scenery
 export const TOWER_PATH_MIN_DISTANCE = 40; // Minimum distance from path for towers
-export const TRAP_PATH_MAX_DISTANCE = 35;  // Maximum distance from path for traps (must be ON path)
+export const TRAP_PATH_MAX_DISTANCE = 55;  // Maximum distance from path for traps (must be ON path)
 
 // === Towers & Combat ===
 export const PARAGON_MERGE_COUNT = 3; // Number of towers needed to create Paragon

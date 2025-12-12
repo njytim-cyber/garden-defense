@@ -142,7 +142,7 @@ export function drawPath(ctx, path, canvasWidth, canvasHeight, sceneryType, asse
     }
 
     // Animated dashed border (using gameTime instead of Date.now())
-    const dashOffset = (gameTime / 50) % 20;
+    const dashOffset = (gameTime / 100) % 20;
     ctx.setLineDash([8, 6]);
     ctx.lineDashOffset = -dashOffset;
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
@@ -312,7 +312,7 @@ export function drawTower(ctx, tower, assetLoader = null, target = null, gameTim
         rotation = Math.atan2(target.y - y, target.x - x) + Math.PI / 2;
     } else if (!config?.isTrap && config?.effect !== 'income') {
         // Idle scan (using gameTime)
-        rotation = Math.sin(gameTime / 2000 + x * 0.01) * 0.4;
+        rotation = Math.sin(gameTime / 4000 + x * 0.01) * 0.4;
     }
 
     // Pop animation
@@ -543,7 +543,7 @@ export function drawProjectile(ctx, projectile, gameTime = 0) {
 
         // Sparkles (using gameTime)
         for (let i = 0; i < 4; i++) {
-            const angle = (i / 4) * Math.PI * 2 + gameTime / 200;
+            const angle = (i / 4) * Math.PI * 2 + gameTime / 400;
             const sx = x + Math.cos(angle) * 7;
             const sy = y + Math.sin(angle) * 7;
             ctx.fillStyle = '#e9d5ff';

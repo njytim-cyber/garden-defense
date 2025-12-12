@@ -19,7 +19,9 @@ export default function WaveHUDView({
     onPauseToggle,
     onSpeedToggle,
     onMenuClick,
-    isMoneyShaking // New prop
+    isMoneyShaking, // New prop
+    towerBarVisible = true, // New prop
+    onToggleTowerBar // New prop
 }) {
     const [displayMoney, setDisplayMoney] = useState(money);
     const [isFlashing, setIsFlashing] = useState(false);
@@ -153,6 +155,17 @@ export default function WaveHUDView({
                             </svg>
                         </button>
                     )}
+
+                    {/* Tower Bar Toggle Button */}
+                    {onToggleTowerBar && (
+                        <button
+                            onClick={onToggleTowerBar}
+                            className="pointer-events-auto w-9 h-9 rounded-lg flex items-center justify-center bg-slate-900/90 border border-slate-500/30 text-slate-300 hover:text-white hover:border-slate-400/80 hover:bg-slate-800 transition-all shadow-md"
+                            title={towerBarVisible ? 'Hide Tower Bar' : 'Show Tower Bar'}
+                        >
+                            {towerBarVisible ? '👁️' : '🙈'}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
@@ -171,5 +184,7 @@ WaveHUDView.propTypes = {
     onPauseToggle: PropTypes.func,
     onSpeedToggle: PropTypes.func,
     onMenuClick: PropTypes.func,
-    isMoneyShaking: PropTypes.bool
+    isMoneyShaking: PropTypes.bool,
+    towerBarVisible: PropTypes.bool,
+    onToggleTowerBar: PropTypes.func
 };

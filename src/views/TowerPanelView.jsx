@@ -12,12 +12,16 @@ export default function TowerPanelView({
     towers,
     selectedTowerType,
     money,
-    onTowerSelect
+    onTowerSelect,
+    isVisible = true // New prop
 }) {
     const availableTowers = Object.entries(towers).filter(([_, tower]) => !tower.locked);
 
     return (
-        <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-slate-900 to-transparent pointer-events-none">
+        <div
+            className={`absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-slate-900 to-transparent pointer-events-none transition-transform duration-300 ${isVisible ? 'translate-y-0' : 'translate-y-full'
+                }`}
+        >
             <div className="flex items-center justify-center gap-2 p-4">
                 {/* Tower Selection - now centered */}
                 <div className="flex gap-2 overflow-x-auto pointer-events-auto">
@@ -104,5 +108,6 @@ TowerPanelView.propTypes = {
     towers: PropTypes.object.isRequired,
     selectedTowerType: PropTypes.string,
     money: PropTypes.number.isRequired,
-    onTowerSelect: PropTypes.func.isRequired
+    onTowerSelect: PropTypes.func.isRequired,
+    isVisible: PropTypes.bool
 };

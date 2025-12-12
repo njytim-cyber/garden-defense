@@ -38,8 +38,8 @@ function App() {
         if (metaMoney >= item.shopPrice) {
             const newTowers = { ...towers };
 
-            if (key === 'spike') {
-                // Consumable - increase quantity
+            if (item.isTrap) {
+                // All traps are consumables - increase quantity
                 newTowers[key] = {
                     ...item,
                     quantity: (item.quantity || 0) + 1,

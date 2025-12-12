@@ -71,6 +71,7 @@ export default function GameEngineContainer({
     const [selectedForParagon, setSelectedForParagon] = useState([]);
     const [moneyShaking, setMoneyShaking] = useState(false); // HUD feedback
     const [showWaveOverlay, setShowWaveOverlay] = useState(false); // New state for wave overlay
+    const [towerBarVisible, setTowerBarVisible] = useState(true); // Tower bar visibility toggle
 
     const entitiesRef = useRef({
         towers: [],
@@ -200,6 +201,10 @@ export default function GameEngineContainer({
 
     const handleSpeedToggle = useCallback(() => {
         setGameSpeed(prev => prev === 1 ? 2 : 1);
+    }, []);
+
+    const handleToggleTowerBar = useCallback(() => {
+        setTowerBarVisible(prev => !prev);
     }, []);
 
     const handleTowerUpgradeoptimization = useMemo(() => ({
@@ -776,7 +781,7 @@ export default function GameEngineContainer({
                         if (startNode) {
                             const sx = startNode.x * canvas.width;
                             const sy = startNode.y * canvas.height;
-                            const floatOffset = Math.sin(Date.now() * 0.005) * 5;
+                            const floatOffset = Math.sin(Date.now() * 0.002) * 5;
 
                             ctx.save();
                             ctx.globalAlpha = waveIndicatorOpacityRef.current; // Apply fade
@@ -878,6 +883,8 @@ export default function GameEngineContainer({
                 onSpeedToggle={handleSpeedToggle}
                 onMenuClick={onMenuClick}
                 isMoneyShaking={moneyShaking}
+                towerBarVisible={towerBarVisible}
+                onToggleTowerBar={handleToggleTowerBar}
             />
 
             <TowerPanelView
@@ -885,6 +892,7 @@ export default function GameEngineContainer({
                 selectedTowerType={selectedTowerType}
                 money={money}
                 onTowerSelect={setSelectedTowerType}
+                isVisible={towerBarVisible}
             />
 
             <UpgradePanelView
