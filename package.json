@@ -1,6 +1,6 @@
 {
     "name": "defenders-of-the-realm",
-    "version": "1.1.0",
+    "version": "3.0.0",
     "type": "module",
     "description": "Defenders of the Realm - A tower defense game built with React and Vite",
     "scripts": {
